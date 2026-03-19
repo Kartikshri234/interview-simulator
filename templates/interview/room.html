@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Interview Room | AI Interview Simulator{% endblock %}
+
+{% block content %}
+<section class="card hero">
+    <h1>{{ session.title|default:'Interview Session' }}</h1>
+    <p>
+        Category: <strong>{{ session.category }}</strong> |
+        Difficulty: <strong>{{ session.difficulty }}</strong> |
+        Questions: <strong>{{ session.total_questions }}</strong>
+    </p>
+    <div id="room-status" class="muted">Ready to start.</div>
+</section>
+
+<section class="grid two">
+    <article class="card" style="padding:20px;">
+        <h3 style="margin-top:0;">Current question</h3>
+        <p id="question-text" class="muted">Click Start Session to fetch your first question.</p>
+
+        <form id="answer-form">
+            {% csrf_token %}
+            <label>
+                Your answer
+                <textarea id="answer-text" name="answer_text" rows="8" placeholder="Type your response here..." required></textarea>
+            </label>
+            <div class="actions">
+                <button type="submit">Submit answer</button>
+            </div>
+        </form>
+    </article>
+
+    <article class="card" style="padding:20px;">
+        <h3 style="margin-top:0;">Session controls</h3>
+        <p class="muted">Use these controls to start and finish this interview.</p>
+        <div class="actions">
+            <button id="start-session-btn" type="button">Start session</button>
+            <button id="end-session-btn" type="button" class="button alt">End and view results</button>
+        </div>
+        <hr style="margin:16px 0; border:none; border-top:1px solid rgba(23,35,59,0.1);">
+        <p class="muted">Session ID: {{ session.id }}</p>
+        <p class="muted">Status: <span class="badge {{ session.status }}">{{ session.status }}</span></p>
+    </article>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    window.INTERVIEW_SESSION_ID = {{ session.id }};
+    window.INTERVIEW_RESULTS_URL = "{% url 'results' session.id %}";
+</script>
+<script src="{% static 'js/interview_room.js' %}"></script>
+{% endblock %}

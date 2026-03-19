@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}History | AI Interview Simulator{% endblock %}
+
+{% block content %}
+<section class="card hero">
+    <h1>Interview History</h1>
+    <p>Review all your past sessions and revisit detailed results.</p>
+</section>
+
+<section class="card" style="padding:20px;">
+    {% if sessions %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Difficulty</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Created</th>
+                        <th>Open</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in sessions %}
+                        <tr>
+                            <td>{{ s.title|default:'Untitled Session' }}</td>
+                            <td>{{ s.category }}</td>
+                            <td>{{ s.difficulty }}</td>
+                            <td><span class="badge {{ s.status }}">{{ s.status }}</span></td>
+                            <td>
+                                {% if s.overall_score is not None %}
+                                    {{ s.overall_score|floatformat:1 }}/10
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ s.created_at|date:'M d, Y H:i' }}</td>
+                            <td>
+                                {% if s.status == 'completed' %}
+                                    <a href="{% url 'results' s.id %}">Results</a>
+                                {% else %}
+                                    <a href="{% url 'interview_room' s.id %}">Room</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty">
+            <p class="muted">You do not have any sessions yet.</p>
+            <a class="button" href="{% url 'new_interview' %}">Create your first session</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

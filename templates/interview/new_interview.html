@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}New Interview | AI Interview Simulator{% endblock %}
+
+{% block content %}
+<section class="card hero">
+    <h1>Create a new interview</h1>
+    <p>Pick your focus and difficulty. We will create a new session and move you to the interview room.</p>
+</section>
+
+<section class="card" style="padding:20px; max-width:760px;">
+    <form id="new-interview-form">
+        {% csrf_token %}
+        <div class="grid two">
+            <label>
+                Session title
+                <input type="text" name="title" placeholder="Python backend mock">
+            </label>
+            <label>
+                Category
+                <select name="category" required>
+                    <option value="python">Python</option>
+                    <option value="django">Django</option>
+                    <option value="dsa">Data Structures & Algorithms</option>
+                    <option value="system_design">System Design</option>
+                    <option value="behavioral">Behavioral</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="database">Database / SQL</option>
+                    <option value="devops">DevOps</option>
+                    <option value="ml">Machine Learning</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="grid two">
+            <label>
+                Difficulty
+                <select name="difficulty" required>
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </label>
+            <label>
+                Total questions
+                <input type="number" name="total_questions" min="1" max="20" value="5" required>
+            </label>
+        </div>
+
+        <div class="actions">
+            <button id="new-interview-submit" type="submit">Create session</button>
+            <a class="button alt" href="{% url 'dashboard' %}">Cancel</a>
+        </div>
+        <p id="new-interview-status" class="muted"></p>
+    </form>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/new_interview.js' %}"></script>
+{% endblock %}

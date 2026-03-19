@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Results | AI Interview Simulator{% endblock %}
+
+{% block content %}
+<section class="card hero">
+    <h1>Session Results</h1>
+    <p>{{ session.title|default:'Interview Session' }} | {{ session.category }} | {{ session.difficulty }}</p>
+    <div class="actions" style="margin-top:12px;">
+        <a class="button" href="{% url 'new_interview' %}">Start another interview</a>
+        <a class="button alt" href="{% url 'history' %}">View history</a>
+    </div>
+</section>
+
+<section class="grid three" style="margin-bottom:16px;">
+    <article class="card stat">
+        <div class="label">Overall score</div>
+        <div class="value">{{ session.overall_score|default:0|floatformat:1 }}/10</div>
+    </article>
+    <article class="card stat">
+        <div class="label">Confidence score</div>
+        <div class="value">{{ session.confidence_score|default:0|floatformat:1 }}</div>
+    </article>
+    <article class="card stat">
+        <div class="label">Sentiment score</div>
+        <div class="value">{{ session.sentiment_score|default:0|floatformat:1 }}</div>
+    </article>
+</section>
+
+<section class="grid two" style="margin-bottom:16px;">
+    <article class="card" style="padding:20px;">
+        <h3 style="margin-top:0;">Feedback summary</h3>
+        <p class="muted">{{ session.feedback_summary|default:'No summary generated yet.' }}</p>
+
+        <h4 style="margin:16px 0 6px;">Strengths</h4>
+        {% if session.strengths %}
+            <ul>
+                {% for item in session.strengths %}
+                    <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="muted">No strengths captured.</p>
+        {% endif %}
+    </article>
+
+    <article class="card" style="padding:20px;">
+        <h3 style="margin-top:0;">Improvement tips</h3>
+        {% if session.improvement_tips %}
+            <ul>
+                {% for tip in session.improvement_tips %}
+                    <li>{{ tip }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="muted">No tips generated.</p>
+        {% endif %}
+
+        <h4 style="margin:16px 0 6px;">Readiness</h4>
+        <p class="muted">{{ session.readiness|default:'Not available' }}</p>
+    </article>
+</section>
+
+<section class="card" style="padding:20px;">
+    <h3 style="margin-top:0;">Answer breakdown</h3>
+    {% if answers %}
+        <div class="answers-list">
+            {% for answer in answers %}
+                <article class="card answer-card">
+                    <h4>Q{{ forloop.counter }}. {{ answer.question_text }}</h4>
+                    <p><strong>Your answer:</strong> {{ answer.answer_text|default:'-' }}</p>
+                    <p><strong>Score:</strong> {{ answer.score|default:0|floatformat:1 }}/10</p>
+                    <p><strong>Sentiment:</strong> {{ answer.sentiment|default:'-' }} ({{ answer.sentiment_score|default:0|floatformat:2 }})</p>
+                    {% if answer.ai_feedback %}
+                        <p><strong>AI feedback:</strong> {{ answer.ai_feedback }}</p>
+                    {% endif %}
+                    {% if answer.improvement_suggestions %}
+                        <p><strong>Suggestions:</strong> {{ answer.improvement_suggestions }}</p>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty muted">No answers were recorded for this session.</div>
+    {% endif %}
+</section>
+{% endblock %}

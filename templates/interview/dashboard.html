@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard | AI Interview Simulator{% endblock %}
+
+{% block content %}
+<section class="card hero">
+    <h1>Interview Dashboard</h1>
+    <p>Track your performance and continue your interview practice.</p>
+    <div class="actions" style="margin-top:14px;">
+        <a class="button" href="{% url 'new_interview' %}">Start New Interview</a>
+        <a class="button alt" href="{% url 'history' %}">View Full History</a>
+    </div>
+</section>
+
+<section class="grid three" style="margin-bottom:16px;">
+    <article class="card stat">
+        <div class="label">Total sessions</div>
+        <div class="value">{{ stats.total|default:0 }}</div>
+    </article>
+    <article class="card stat">
+        <div class="label">Completed sessions</div>
+        <div class="value">{{ stats.completed|default:0 }}</div>
+    </article>
+    <article class="card stat">
+        <div class="label">Average score</div>
+        <div class="value">{{ stats.avg_score|default:0|floatformat:1 }}/10</div>
+    </article>
+</section>
+
+<section class="card" style="padding:20px;">
+    <h3 style="margin-top:0;">Recent sessions</h3>
+
+    {% if recent %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Score</th>
+                        <th>Created</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in recent %}
+                        <tr>
+                            <td>{{ s.title|default:'Untitled Session' }}</td>
+                            <td>{{ s.category }}</td>
+                            <td><span class="badge {{ s.status }}">{{ s.status }}</span></td>
+                            <td>
+                                {% if s.overall_score is not None %}
+                                    {{ s.overall_score|floatformat:1 }}/10
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ s.created_at|date:'M d, Y H:i' }}</td>
+                            <td>
+                                {% if s.status == 'completed' %}
+                                    <a href="{% url 'results' s.id %}">View results</a>
+                                {% else %}
+                                    <a href="{% url 'interview_room' s.id %}">Continue</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty muted">
+            No sessions yet. Start your first interview now.
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Register | AI Interview Simulator{% endblock %}
+
+{% block content %}
+<section class="card hero" style="max-width:700px; margin: 0 auto;">
+    <h1>Create your account</h1>
+    <p>Set your target role and level to personalize interview sessions.</p>
+
+    <form method="post" action="{% url 'register' %}" style="margin-top:18px;">
+        {% csrf_token %}
+        <div class="grid two">
+            <label>
+                Username
+                <input type="text" name="username" required autocomplete="username">
+            </label>
+            <label>
+                Email
+                <input type="email" name="email" required autocomplete="email">
+            </label>
+        </div>
+
+        <div class="grid two">
+            <label>
+                Password
+                <input type="password" name="password" required autocomplete="new-password" minlength="8">
+            </label>
+            <label>
+                Confirm password
+                <input type="password" name="password2" required autocomplete="new-password" minlength="8">
+            </label>
+        </div>
+
+        <div class="grid two">
+            <label>
+                Target role
+                <input type="text" name="target_role" placeholder="Backend Engineer">
+            </label>
+            <label>
+                Experience level
+                <select name="experience_level">
+                    <option value="junior">Junior</option>
+                    <option value="mid" selected>Mid-level</option>
+                    <option value="senior">Senior</option>
+                </select>
+            </label>
+        </div>
+
+        <button type="submit">Create account</button>
+    </form>
+
+    <p class="muted" style="margin-top:14px;">
+        Already have an account? <a href="{% url 'login' %}">Log in</a>
+    </p>
+</section>
+{% endblock %}

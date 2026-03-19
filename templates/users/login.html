@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Login | AI Interview Simulator{% endblock %}
+
+{% block content %}
+<section class="card hero" style="max-width:560px; margin: 0 auto;">
+    <h1>Welcome back</h1>
+    <p>Sign in with your email to continue your interview practice.</p>
+
+    <form method="post" action="{% url 'login' %}" style="margin-top: 18px;">
+        {% csrf_token %}
+        <label>
+            Email
+            <input type="email" name="email" required autocomplete="email">
+        </label>
+        <label>
+            Password
+            <input type="password" name="password" required autocomplete="current-password">
+        </label>
+        <button type="submit">Log In</button>
+    </form>
+
+    <p class="muted" style="margin-top:14px;">
+        New here? <a href="{% url 'register' %}">Create an account</a>
+    </p>
+</section>
+{% endblock %}
