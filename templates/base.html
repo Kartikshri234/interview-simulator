@@ -1,6 +1,6 @@
 {% load static %}
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -30,6 +30,7 @@
         <a href="{% url 'login' %}">Login</a>
         <a href="{% url 'register' %}" class="btn-link">Get started</a>
       {% endif %}
+      <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark theme">🌙</button>
     </nav>
   </header>
 
