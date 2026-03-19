@@ -38,7 +38,9 @@ def register_view(request):
             messages.error(request, 'Passwords do not match.')
         elif len(password) < 8:
             messages.error(request, 'Password must be at least 8 characters.')
-        elif CustomUser.objects.filter(email=email).exists():
+        elif CustomUser.objects.filter(username__iexact=username).exists():
+            messages.error(request, 'That username is already taken.')
+        elif CustomUser.objects.filter(email__iexact=email).exists():
             messages.error(request, 'An account with that email already exists.')
         else:
             user = CustomUser.objects.create_user(
@@ -60,7 +62,12 @@ def logout_view(request):
 def profile_view(request):
     if request.method == 'POST':
         u = request.user
-        u.username         = request.POST.get('username', u.username).strip()
+        new_username = request.POST.get('username', u.username).strip()
+        # Check username uniqueness on profile update (exclude current user)
+        if new_username != u.username and CustomUser.objects.filter(username__iexact=new_username).exclude(pk=u.pk).exists():
+            messages.error(request, 'That username is already taken.')
+            return redirect('profile')
+        u.username         = new_username
         u.bio              = request.POST.get('bio', u.bio).strip()
         u.target_role      = request.POST.get('target_role', u.target_role).strip()
         u.experience_level = request.POST.get('experience_level', u.experience_level)
