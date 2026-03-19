@@ -1,54 +1,87 @@
 {% extends 'base.html' %}
 {% load static %}
-
-{% block title %}Interview Room | AI Interview Simulator{% endblock %}
+{% block title %}Interview Room | InterviewAI{% endblock %}
 
 {% block content %}
+
 <section class="card hero">
-    <h1>{{ session.title|default:'Interview Session' }}</h1>
-    <p>
-        Category: <strong>{{ session.category }}</strong> |
-        Difficulty: <strong>{{ session.difficulty }}</strong> |
-        Questions: <strong>{{ session.total_questions }}</strong>
-    </p>
-    <div id="room-status" class="muted">Ready to start.</div>
+  <div class="hero-strip"><div class="hero-pill">Live session</div></div>
+  <h1>{{ session.title|default:'Interview Session' }}</h1>
+  <p>
+    <span class="mono" style="color:var(--cyan);">{{ session.category }}</span>
+    <span style="color:var(--text-3);margin:0 8px;">·</span>
+    <span class="mono" style="color:var(--text-3);">{{ session.difficulty }}</span>
+    <span style="color:var(--text-3);margin:0 8px;">·</span>
+    <span class="mono" style="color:var(--text-3);">{{ session.total_questions }} questions</span>
+  </p>
+  <div id="room-status">Ready to start.</div>
 </section>
 
-<section class="grid two">
-    <article class="card" style="padding:20px;">
-        <h3 style="margin-top:0;">Current question</h3>
-        <p id="question-text" class="muted">Click Start Session to fetch your first question.</p>
+<div class="grid two">
 
-        <form id="answer-form">
-            {% csrf_token %}
-            <label>
-                Your answer
-                <textarea id="answer-text" name="answer_text" rows="8" placeholder="Type your response here..." required></textarea>
-            </label>
-            <div class="actions">
-                <button type="submit">Submit answer</button>
-            </div>
-        </form>
-    </article>
+  <!-- Question + answer -->
+  <article class="card section-pad">
+    <h3>Current question</h3>
 
-    <article class="card" style="padding:20px;">
-        <h3 style="margin-top:0;">Session controls</h3>
-        <p class="muted">Use these controls to start and finish this interview.</p>
-        <div class="actions">
-            <button id="start-session-btn" type="button">Start session</button>
-            <button id="end-session-btn" type="button" class="button alt">End and view results</button>
+    <div class="room-question" id="question-text">
+      Click <strong>Start session</strong> to fetch your first question.
+    </div>
+
+    <form id="answer-form">
+      {% csrf_token %}
+      <label>
+        Your answer
+        <textarea id="answer-text" name="answer_text" rows="9" placeholder="Type your response here..."></textarea>
+      </label>
+      <div class="actions">
+        <button type="submit">Submit answer →</button>
+      </div>
+    </form>
+  </article>
+
+  <!-- Controls -->
+  <article class="card section-pad" style="display:flex;flex-direction:column;gap:20px;">
+    <div>
+      <h3>Session controls</h3>
+      <div class="actions">
+        <button id="start-session-btn" type="button">▶ Start session</button>
+        <button id="end-session-btn" type="button" class="button alt">⏹ End &amp; view results</button>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div>
+      <div class="muted" style="font-size:0.8rem;font-family:var(--font-mono);margin-bottom:8px;">SESSION INFO</div>
+      <div style="display:grid;gap:8px;">
+        <div style="display:flex;justify-content:space-between;font-size:0.88rem;">
+          <span style="color:var(--text-3);">Session ID</span>
+          <span class="mono">{{ session.id }}</span>
         </div>
-        <hr style="margin:16px 0; border:none; border-top:1px solid rgba(23,35,59,0.1);">
-        <p class="muted">Session ID: {{ session.id }}</p>
-        <p class="muted">Status: <span class="badge {{ session.status }}">{{ session.status }}</span></p>
-    </article>
-</section>
+        <div style="display:flex;justify-content:space-between;font-size:0.88rem;">
+          <span style="color:var(--text-3);">Status</span>
+          <span class="badge {{ session.status }}">{{ session.status }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.88rem;">
+          <span style="color:var(--text-3);">Category</span>
+          <span class="mono">{{ session.category }}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.88rem;">
+          <span style="color:var(--text-3);">Difficulty</span>
+          <span class="mono">{{ session.difficulty }}</span>
+        </div>
+      </div>
+    </div>
+  </article>
+
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    window.INTERVIEW_SESSION_ID = {{ session.id }};
-    window.INTERVIEW_RESULTS_URL = "{% url 'results' session.id %}";
+  window.INTERVIEW_SESSION_ID = {{ session.id }};
+  window.INTERVIEW_RESULTS_URL = "{% url 'results' session.id %}";
 </script>
 <script src="{% static 'js/interview_room.js' %}"></script>
 {% endblock %}

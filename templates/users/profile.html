@@ -1,68 +1,90 @@
 {% extends 'base.html' %}
-
-{% block title %}Profile | AI Interview Simulator{% endblock %}
+{% block title %}Profile | InterviewAI{% endblock %}
 
 {% block content %}
+
 <section class="card hero">
-    <h1>Your profile</h1>
-    <p>Update your info used for interview personalization.</p>
+  <div class="hero-strip"><div class="hero-pill">Your account</div></div>
+  <h1>Your <span class="accent">Profile</span></h1>
+  <p>Update your info to personalize future interview sessions.</p>
 </section>
 
-<section class="grid two">
-    <article class="card" style="padding: 20px;">
-        <h3 style="margin-top:0;">Profile details</h3>
-        <form method="post" enctype="multipart/form-data" action="{% url 'profile' %}">
-            {% csrf_token %}
-            <label>
-                Username
-                <input type="text" name="username" value="{{ request.user.username }}" required>
-            </label>
-            <label>
-                Bio
-                <textarea name="bio" rows="4" placeholder="Tell us about your goals">{{ request.user.bio }}</textarea>
-            </label>
-            <label>
-                Target role
-                <input type="text" name="target_role" value="{{ request.user.target_role }}" placeholder="Backend Engineer">
-            </label>
-            <label>
-                Experience level
-                <select name="experience_level">
-                    <option value="junior" {% if request.user.experience_level == 'junior' %}selected{% endif %}>Junior</option>
-                    <option value="mid" {% if request.user.experience_level == 'mid' %}selected{% endif %}>Mid-level</option>
-                    <option value="senior" {% if request.user.experience_level == 'senior' %}selected{% endif %}>Senior</option>
-                </select>
-            </label>
-            <label>
-                Avatar
-                <input type="file" name="avatar" accept="image/*">
-            </label>
-            <button type="submit">Save changes</button>
-        </form>
-    </article>
+<div class="grid two">
 
-    <article class="card" style="padding:20px;">
-        <h3 style="margin-top:0;">Progress snapshot</h3>
-        <div class="grid">
-            <div class="stat card">
-                <div class="label">Total sessions</div>
-                <div class="value">{{ stats.total|default:0 }}</div>
-            </div>
-            <div class="stat card">
-                <div class="label">Completed</div>
-                <div class="value">{{ stats.completed|default:0 }}</div>
-            </div>
-            <div class="stat card">
-                <div class="label">Average score</div>
-                <div class="value">{{ stats.avg_score|default:0|floatformat:1 }}/10</div>
-            </div>
-        </div>
+  <!-- Profile form -->
+  <article class="card section-pad">
+    <h3>Profile details</h3>
+    <form method="post" enctype="multipart/form-data" action="{% url 'profile' %}">
+      {% csrf_token %}
+      <label>
+        Username
+        <input type="text" name="username" value="{{ request.user.username }}" required>
+      </label>
+      <label>
+        Bio
+        <textarea name="bio" rows="3" placeholder="Your goals, background...">{{ request.user.bio }}</textarea>
+      </label>
+      <label>
+        Target role
+        <input type="text" name="target_role" value="{{ request.user.target_role }}" placeholder="e.g. Backend Engineer">
+      </label>
+      <label>
+        Experience level
+        <select name="experience_level">
+          <option value="junior" {% if request.user.experience_level == 'junior' %}selected{% endif %}>🟢 Junior</option>
+          <option value="mid"    {% if request.user.experience_level == 'mid'    %}selected{% endif %}>🔵 Mid-level</option>
+          <option value="senior" {% if request.user.experience_level == 'senior' %}selected{% endif %}>🟣 Senior</option>
+        </select>
+      </label>
+      <label>
+        Avatar
+        <input type="file" name="avatar" accept="image/*">
+      </label>
+      <button type="submit" style="margin-top:4px;">Save changes</button>
+    </form>
+  </article>
 
-        {% if request.user.avatar %}
-            <div style="margin-top: 16px;">
-                <img src="{{ request.user.avatar.url }}" alt="avatar" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">
-            </div>
+  <!-- Stats + avatar -->
+  <article class="card section-pad" style="display:flex;flex-direction:column;gap:20px;">
+
+    <!-- Avatar -->
+    <div class="avatar-wrap">
+      {% if request.user.avatar %}
+        <img src="{{ request.user.avatar.url }}" alt="avatar" class="avatar-img">
+      {% else %}
+        <div class="avatar-placeholder">{{ request.user.initials }}</div>
+      {% endif %}
+      <div style="text-align:center;">
+        <div style="font-family:var(--font-head);font-weight:700;font-size:1.1rem;">{{ request.user.username }}</div>
+        <div class="muted mono">{{ request.user.email }}</div>
+        {% if request.user.target_role %}
+          <div style="margin-top:6px;font-size:0.85rem;color:var(--cyan);">{{ request.user.target_role }}</div>
         {% endif %}
-    </article>
-</section>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- Stats -->
+    <div>
+      <div class="muted" style="font-size:0.78rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Progress snapshot</div>
+      <div class="grid" style="gap:10px;">
+        <div class="card stat" style="padding:16px 18px;">
+          <div class="label">Total sessions</div>
+          <div class="value" style="font-size:1.5rem;">{{ stats.total|default:0 }}</div>
+        </div>
+        <div class="card stat" style="padding:16px 18px;">
+          <div class="label">Completed</div>
+          <div class="value" style="font-size:1.5rem;">{{ stats.completed|default:0 }}</div>
+        </div>
+        <div class="card stat" style="padding:16px 18px;">
+          <div class="label">Avg score</div>
+          <div class="value" style="font-size:1.5rem;">{{ stats.avg_score|default:0|floatformat:1 }}<span style="font-size:0.9rem;color:var(--text-3)">/10</span></div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+</div>
+
 {% endblock %}

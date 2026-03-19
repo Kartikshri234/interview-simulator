@@ -1,60 +1,92 @@
 {% extends 'base.html' %}
 {% load static %}
-
-{% block title %}New Interview | AI Interview Simulator{% endblock %}
+{% block title %}New Interview | InterviewAI{% endblock %}
 
 {% block content %}
+
 <section class="card hero">
-    <h1>Create a new interview</h1>
-    <p>Pick your focus and difficulty. We will create a new session and move you to the interview room.</p>
+  <div class="hero-strip"><div class="hero-pill">New session</div></div>
+  <h1>Create a new <span class="accent">interview</span></h1>
+  <p>Pick your focus area and difficulty — we'll generate tailored questions just for you.</p>
 </section>
 
-<section class="card" style="padding:20px; max-width:760px;">
-    <form id="new-interview-form">
-        {% csrf_token %}
-        <div class="grid two">
-            <label>
-                Session title
-                <input type="text" name="title" placeholder="Python backend mock">
-            </label>
-            <label>
-                Category
-                <select name="category" required>
-                    <option value="python">Python</option>
-                    <option value="django">Django</option>
-                    <option value="dsa">Data Structures & Algorithms</option>
-                    <option value="system_design">System Design</option>
-                    <option value="behavioral">Behavioral</option>
-                    <option value="javascript">JavaScript</option>
-                    <option value="database">Database / SQL</option>
-                    <option value="devops">DevOps</option>
-                    <option value="ml">Machine Learning</option>
-                </select>
-            </label>
-        </div>
+<section class="card section-pad" style="max-width:820px;">
+  <form id="new-interview-form">
+    {% csrf_token %}
 
-        <div class="grid two">
-            <label>
-                Difficulty
-                <select name="difficulty" required>
-                    <option value="easy">Easy</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
-            </label>
-            <label>
-                Total questions
-                <input type="number" name="total_questions" min="1" max="20" value="5" required>
-            </label>
-        </div>
+    <!-- Title + Difficulty -->
+    <div class="grid two">
+      <label>
+        Session title <span style="color:var(--text-3);font-size:0.75rem;">(optional)</span>
+        <input type="text" name="title" placeholder="e.g. Python backend mock">
+      </label>
+      <label>
+        Difficulty
+        <select name="difficulty" required>
+          <option value="easy">🟢 Easy</option>
+          <option value="medium" selected>🔵 Medium</option>
+          <option value="hard">🔴 Hard</option>
+        </select>
+      </label>
+    </div>
 
-        <div class="actions">
-            <button id="new-interview-submit" type="submit">Create session</button>
-            <a class="button alt" href="{% url 'dashboard' %}">Cancel</a>
+    <!-- Questions count -->
+    <label style="max-width:240px;">
+      Number of questions
+      <input type="number" name="total_questions" min="1" max="20" value="5" required>
+    </label>
+
+    <!-- Category picker -->
+    <div>
+      <div style="font-size:0.82rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--text-3);font-family:var(--font-mono);margin-bottom:10px;">Category</div>
+      <div class="cat-grid">
+        <div class="cat-option">
+          <input type="radio" name="category" id="cat-python" value="python" checked>
+          <label for="cat-python"><span class="cat-icon">🐍</span><span class="cat-name">Python</span></label>
         </div>
-        <p id="new-interview-status" class="muted"></p>
-    </form>
+        <div class="cat-option">
+          <input type="radio" name="category" id="cat-django" value="django">
+          <label for="cat-django"><span class="cat-icon">🌿</span><span class="cat-name">Django</span></label>
+        </div>
+        <div class="cat-option">
+          <input type="radio" name="category" id="cat-dsa" value="dsa">
+          <label for="cat-dsa"><span class="cat-icon">🧮</span><span class="cat-name">DSA</span></label>
+        </div>
+        <div class="cat-option">
+          <input type="radio" name="category" id="cat-system" value="system_design">
+          <label for="cat-system"><span class="cat-icon">🏗️</span><span class="cat-name">System Design</span></label>
+        </div>
+        <div class="cat-option">
+          <input type="radio" name="category" id="cat-behavioral" value="behavioral">
+          <label for="cat-behavioral"><span class="cat-icon">🧠</span><span class="cat-name">Behavioral</span></label>
+        </div>
+        <div class="cat-option">
+          <input type="radio" name="category" id="cat-js" value="javascript">
+          <label for="cat-js"><span class="cat-icon">⚡</span><span class="cat-name">JavaScript</span></label>
+        </div>
+        <div class="cat-option">
+          <input type="radio" name="category" id="cat-db" value="database">
+          <label for="cat-db"><span class="cat-icon">🗄️</span><span class="cat-name">Database</span></label>
+        </div>
+        <div class="cat-option">
+          <input type="radio" name="category" id="cat-devops" value="devops">
+          <label for="cat-devops"><span class="cat-icon">🚀</span><span class="cat-name">DevOps</span></label>
+        </div>
+        <div class="cat-option">
+          <input type="radio" name="category" id="cat-ml" value="ml">
+          <label for="cat-ml"><span class="cat-icon">🤖</span><span class="cat-name">ML / AI</span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions" style="margin-top:8px;">
+      <button id="new-interview-submit" type="submit">Create session →</button>
+      <a class="button alt" href="{% url 'dashboard' %}">Cancel</a>
+    </div>
+    <p id="new-interview-status" class="muted" style="margin-top:6px;font-family:var(--font-mono);font-size:0.82rem;"></p>
+  </form>
 </section>
+
 {% endblock %}
 
 {% block extra_js %}
