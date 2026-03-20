@@ -71,7 +71,7 @@ class SessionDetailView(generics.RetrieveAPIView):
 
 
 def _ensure_runtime_state(session: InterviewSession):
-    state = SESSION_RUNTIME_STATE.get(session.id)
+    state = SESSION_RUNTIME_STATE.get(session.pk)
     if state:
         return state
 
@@ -81,12 +81,12 @@ def _ensure_runtime_state(session: InterviewSession):
         questions = generate_questions("python", "medium", count)
 
     state = {"questions": questions, "index": 0}
-    SESSION_RUNTIME_STATE[session.id] = state
+    SESSION_RUNTIME_STATE[session.pk] = state
     return state
 
 
 def _finalize_session(session: InterviewSession):
-    answers_qs = session.answers.all()
+    answers_qs = InterviewAnswer.objects.filter(session=session)
     if not answers_qs.exists():
         session.status = "completed"
         session.ended_at = timezone.now()
@@ -167,7 +167,7 @@ class EndSessionView(APIView):
     def post(self, request, pk):
         session = get_object_or_404(InterviewSession, pk=pk, user=request.user)
         _finalize_session(session)
-        SESSION_RUNTIME_STATE.pop(session.id, None)
+        SESSION_RUNTIME_STATE.pop(session.pk, None)
         return Response({"detail": "Session ended.", "status": session.status})
 
 
@@ -188,7 +188,7 @@ class SubmitAnswerView(APIView):
         questions = state.get("questions", [])
         if idx >= len(questions):
             _finalize_session(session)
-            SESSION_RUNTIME_STATE.pop(session.id, None)
+            SESSION_RUNTIME_STATE.pop(session.pk, None)
             return Response({"completed": True})
 
         current = questions[idx]
@@ -214,7 +214,7 @@ class SubmitAnswerView(APIView):
         state["index"] = idx + 1
         if state["index"] >= len(questions):
             _finalize_session(session)
-            SESSION_RUNTIME_STATE.pop(session.id, None)
+            SESSION_RUNTIME_STATE.pop(session.pk, None)
             return Response({"completed": True})
 
         next_question = questions[state["index"]].get("question_text", "")
@@ -262,7 +262,7 @@ class SubmitVoiceView(APIView):
         answer.save()
 
         return Response({
-            "answer_id": answer.id,
+            "answer_id": answer.pk,
             "transcribed_text": transcribed,
             "score": answer.score,
         })

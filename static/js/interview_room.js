@@ -2,32 +2,30 @@
     const sessionId = window.INTERVIEW_SESSION_ID;
     if (!sessionId) return;
 
-    const statusEl = document.getElementById('room-status');
+    const statusEl   = document.getElementById('room-status');
     const questionEl = document.getElementById('question-text');
-    const startBtn = document.getElementById('start-session-btn');
-    const endBtn = document.getElementById('end-session-btn');
+    const startBtn   = document.getElementById('start-session-btn');
+    const endBtn     = document.getElementById('end-session-btn');
     const answerForm = document.getElementById('answer-form');
     const answerText = document.getElementById('answer-text');
 
-    function setStatus(text) {
-        statusEl.textContent = text;
-    }
+    function setStatus(text) { statusEl.textContent = text; }
+
+    // All fetch calls go through Auth.apiCall so the JWT access token
+    // is attached automatically and silently refreshed when near expiry.
 
     async function startSession() {
         setStatus('Starting interview session...');
         startBtn.disabled = true;
 
         try {
-            const res = await fetch('/api/interview/sessions/' + sessionId + '/start/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': window.getCsrfToken()
-                },
-                credentials: 'same-origin'
-            });
+            const res = await window.Auth.apiCall(
+                '/api/interview/sessions/' + sessionId + '/start/',
+                { method: 'POST' }
+            );
 
             if (!res.ok) throw new Error('Failed to start session.');
-            const data = await res.json();
+            const data     = await res.json();
             const question = data.question || data.question_text || 'Session started. Waiting for question payload.';
             questionEl.textContent = question;
             setStatus('Session started. Submit your answer below.');
@@ -44,15 +42,13 @@
 
         setStatus('Submitting answer...');
         try {
-            const res = await fetch('/api/interview/sessions/' + sessionId + '/answer/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': window.getCsrfToken()
-                },
-                body: JSON.stringify({ answer_text: text }),
-                credentials: 'same-origin'
-            });
+            const res = await window.Auth.apiCall(
+                '/api/interview/sessions/' + sessionId + '/answer/',
+                {
+                    method: 'POST',
+                    body:   JSON.stringify({ answer_text: text }),
+                }
+            );
 
             if (!res.ok) throw new Error('Answer submission failed.');
             const data = await res.json();
@@ -81,13 +77,10 @@
         endBtn.disabled = true;
 
         try {
-            const res = await fetch('/api/interview/sessions/' + sessionId + '/end/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': window.getCsrfToken()
-                },
-                credentials: 'same-origin'
-            });
+            const res = await window.Auth.apiCall(
+                '/api/interview/sessions/' + sessionId + '/end/',
+                { method: 'POST' }
+            );
 
             if (!res.ok) throw new Error('Could not end session.');
             window.location.href = window.INTERVIEW_RESULTS_URL;

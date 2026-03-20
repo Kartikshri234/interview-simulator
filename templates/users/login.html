@@ -11,22 +11,82 @@
     <h1>Welcome back</h1>
     <p class="subtitle">Sign in to continue your interview practice.</p>
 
-    <form method="post" action="{% url 'login' %}">
-      {% csrf_token %}
+    <!-- Show reason message if redirected from an expired session -->
+    <div id="login-banner" style="display:none; color:var(--red,#f87171); margin-bottom:12px; font-size:.9rem;"></div>
+
+    <div id="login-form">
       <label>
         Email address
-        <input type="email" name="email" required autocomplete="email" placeholder="you@example.com">
+        <input type="email" id="login-email" required autocomplete="email" placeholder="you@example.com">
       </label>
       <label>
         Password
-        <input type="password" name="password" required autocomplete="current-password" placeholder="••••••••">
+        <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••">
       </label>
-      <button type="submit" style="margin-top:4px; width:100%; padding:13px;">Sign in →</button>
-    </form>
+      <p id="login-error" style="color:var(--red,#f87171); font-size:.88rem; min-height:1.2em; margin:6px 0 0;"></p>
+      <button id="login-btn" type="button" style="margin-top:4px; width:100%; padding:13px;">Sign in →</button>
+    </div>
 
     <div class="auth-footer">
       No account yet? <a href="{% url 'register' %}">Create one free</a>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    // Show "session expired" banner if redirected here
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('reason') === 'expired') {
+        const banner = document.getElementById('login-banner');
+        banner.textContent = 'Your session has expired. Please sign in again.';
+        banner.style.display = 'block';
+    }
+
+    // If already authenticated, skip to dashboard
+    if (window.Auth && window.Auth.isAuthenticated()) {
+        window.location.href = '/dashboard/';
+        return;
+    }
+
+    const emailEl    = document.getElementById('login-email');
+    const passwordEl = document.getElementById('login-password');
+    const errorEl    = document.getElementById('login-error');
+    const btn        = document.getElementById('login-btn');
+
+    async function doLogin() {
+        const email    = emailEl.value.trim();
+        const password = passwordEl.value;
+
+        if (!email || !password) {
+            errorEl.textContent = 'Please enter your email and password.';
+            return;
+        }
+
+        btn.disabled      = true;
+        btn.textContent   = 'Signing in…';
+        errorEl.textContent = '';
+
+        try {
+            await window.Auth.login(email, password);
+            window.location.href = '/dashboard/';
+        } catch (err) {
+            errorEl.textContent = err.message || 'Login failed. Please try again.';
+            btn.disabled      = false;
+            btn.textContent   = 'Sign in →';
+        }
+    }
+
+    btn.addEventListener('click', doLogin);
+
+    // Allow Enter key to submit
+    [emailEl, passwordEl].forEach(el => {
+        el.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') doLogin();
+        });
+    });
+})();
+</script>
 {% endblock %}

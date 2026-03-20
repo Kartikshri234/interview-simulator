@@ -14,7 +14,7 @@
   <!-- Profile form -->
   <article class="card section-pad">
     <h3>Profile details</h3>
-    <form method="post" enctype="multipart/form-data" action="{% url 'profile' %}">
+    <form method="post" enctype="multipart/form-data" action="{% url 'profile' %}" id="profile-form">
       {% csrf_token %}
       <label>
         Username
@@ -36,23 +36,55 @@
           <option value="senior" {% if request.user.experience_level == 'senior' %}selected{% endif %}>🟣 Senior</option>
         </select>
       </label>
-      <label>
-        Avatar
-        <input type="file" name="avatar" accept="image/*">
-      </label>
+
+      <!-- ── Avatar uploader ── -->
+      <div>
+        <div class="avatar-upload-label">Avatar</div>
+        <div class="avatar-upload-zone" id="avatar-drop-zone">
+          <input type="file" name="avatar" id="avatar-input" accept="image/*" class="avatar-file-input">
+
+          <!-- Preview (hidden until image chosen) -->
+          <div class="avatar-preview-wrap" id="avatar-preview-wrap" style="display:none;">
+            <img id="avatar-preview-img" src="" alt="preview">
+            <button type="button" class="avatar-clear-btn" id="avatar-clear-btn" title="Remove">✕</button>
+          </div>
+
+          <!-- Placeholder (shown when no image) -->
+          <div class="avatar-placeholder-zone" id="avatar-placeholder-zone">
+            <div class="avatar-upload-icon">
+              {% if request.user.avatar %}
+                <img src="{{ request.user.avatar.url }}" alt="current" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan);">
+              {% else %}
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--cyan)">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              {% endif %}
+            </div>
+            <div class="avatar-upload-text">
+              <span class="avatar-upload-main">
+                {% if request.user.avatar %}Change avatar{% else %}Upload avatar{% endif %}
+              </span>
+              <span class="avatar-upload-sub">Drag & drop or click to browse · PNG, JPG, WebP</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ── end Avatar uploader ── -->
+
       <button type="submit" style="margin-top:4px;">Save changes</button>
     </form>
   </article>
 
-  <!-- Stats + avatar -->
+  <!-- Stats + avatar display -->
   <article class="card section-pad" style="display:flex;flex-direction:column;gap:20px;">
 
-    <!-- Avatar -->
     <div class="avatar-wrap">
       {% if request.user.avatar %}
-        <img src="{{ request.user.avatar.url }}" alt="avatar" class="avatar-img">
+        <img src="{{ request.user.avatar.url }}" alt="avatar" class="avatar-img" id="profile-avatar-display">
       {% else %}
-        <div class="avatar-placeholder">{{ request.user.initials }}</div>
+        <div class="avatar-placeholder" id="profile-avatar-display">{{ request.user.initials }}</div>
       {% endif %}
       <div style="text-align:center;">
         <div style="font-family:var(--font-head);font-weight:700;font-size:1.1rem;">{{ request.user.username }}</div>
@@ -65,7 +97,6 @@
 
     <hr class="divider">
 
-    <!-- Stats -->
     <div>
       <div class="muted" style="font-size:0.78rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Progress snapshot</div>
       <div class="grid" style="gap:10px;">
@@ -87,4 +118,191 @@
 
 </div>
 
+{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ── Avatar upload zone ── */
+.avatar-upload-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  margin-bottom: 8px;
+}
+
+.avatar-upload-zone {
+  position: relative;
+  border: 2px dashed var(--border-2);
+  border-radius: 16px;
+  padding: 24px 20px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 110px;
+}
+.avatar-upload-zone:hover,
+.avatar-upload-zone.drag-over {
+  border-color: var(--cyan);
+  background: var(--cyan-dim);
+  box-shadow: 0 0 0 3px var(--cyan-dim);
+}
+
+/* Hidden real file input — covers the whole zone for click-to-browse */
+.avatar-file-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+  /* override form label styles */
+  border: none !important;
+  background: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* ── Placeholder state ── */
+.avatar-placeholder-zone {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  pointer-events: none;
+  width: 100%;
+}
+.avatar-upload-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+}
+.avatar-upload-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.avatar-upload-main {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.avatar-upload-sub {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Preview state ── */
+.avatar-preview-wrap {
+  position: relative;
+  pointer-events: none;
+  z-index: 1;
+}
+.avatar-preview-wrap img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2.5px solid var(--cyan);
+  box-shadow: 0 0 20px var(--cyan-glow);
+  display: block;
+}
+.avatar-clear-btn {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  border: none;
+  font-size: 0.65rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+  z-index: 3;
+  padding: 0;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: transform 0.15s, background 0.2s;
+}
+.avatar-clear-btn:hover { transform: scale(1.15); background: #dc2626; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const zone        = document.getElementById('avatar-drop-zone');
+  const input       = document.getElementById('avatar-input');
+  const previewWrap = document.getElementById('avatar-preview-wrap');
+  const previewImg  = document.getElementById('avatar-preview-img');
+  const placeholder = document.getElementById('avatar-placeholder-zone');
+  const clearBtn    = document.getElementById('avatar-clear-btn');
+
+  function showPreview(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      previewImg.src = e.target.result;
+      previewWrap.style.display = 'block';
+      placeholder.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function clearPreview() {
+    previewWrap.style.display = 'none';
+    placeholder.style.display = 'flex';
+    previewImg.src = '';
+    // Reset the file input so the same file can be re-selected
+    input.value = '';
+  }
+
+  // File chosen via click
+  input.addEventListener('change', function () {
+    if (input.files && input.files[0]) showPreview(input.files[0]);
+  });
+
+  // Clear button (sits on top of input, needs pointer-events + stopPropagation)
+  clearBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    clearPreview();
+  });
+
+  // Drag & drop
+  zone.addEventListener('dragover', function (e) {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+  zone.addEventListener('dragleave', function () {
+    zone.classList.remove('drag-over');
+  });
+  zone.addEventListener('drop', function (e) {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      // Inject the dropped file into the real input
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      showPreview(file);
+    }
+  });
+})();
+</script>
 {% endblock %}
