@@ -1,56 +1,58 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}History | InterviewAI{% endblock %}
 
 {% block content %}
 
-<section class="card hero">
+<section class="card page-hero page-hero-history reveal">
   <div class="hero-strip"><div class="hero-pill">All sessions</div></div>
-  <h1>Interview <span class="accent">History</span></h1>
-  <p>Review all past sessions and revisit detailed results.</p>
+  <h1>Interview history timeline</h1>
+  <p>Browse all practice attempts and jump back into unfinished sessions instantly.</p>
 </section>
 
-<section class="card section-pad">
+<section class="card section-pad reveal" data-page="history">
   {% if sessions %}
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Difficulty</th>
-            <th>Status</th>
-            <th>Score</th>
-            <th>Date</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in sessions %}
-            <tr>
-              <td style="color:var(--text);font-weight:500;">{{ s.title|default:'Untitled Session' }}</td>
-              <td><span class="mono">{{ s.category }}</span></td>
-              <td><span class="mono" style="color:var(--text-3);">{{ s.difficulty }}</span></td>
-              <td><span class="badge {{ s.status }}">{{ s.status }}</span></td>
-              <td>
-                {% if s.overall_score is not None %}
-                  <span style="color:var(--cyan);font-family:var(--font-mono);font-weight:700;">{{ s.overall_score|floatformat:1 }}/10</span>
-                {% else %}
-                  <span style="color:var(--text-3)">—</span>
-                {% endif %}
-              </td>
-              <td class="muted mono">{{ s.created_at|date:'M d, Y' }}</td>
-              <td>
-                {% if s.status == 'completed' %}
-                  <a href="{% url 'results' s.id %}">Results →</a>
-                {% else %}
-                  <a href="{% url 'interview_room' s.id %}">Continue →</a>
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="history-head">
+      <h3>All sessions</h3>
+      <div class="filter-row" role="group" aria-label="Filter history">
+        <button type="button" class="chip-filter is-active" data-filter="all">All</button>
+        <button type="button" class="chip-filter" data-filter="completed">Completed</button>
+        <button type="button" class="chip-filter" data-filter="active">Active</button>
+        <button type="button" class="chip-filter" data-filter="pending">Pending</button>
+        <button type="button" class="chip-filter" data-filter="abandoned">Abandoned</button>
+      </div>
     </div>
+
+    <div class="recent-stack" id="history-stack">
+      {% for s in sessions %}
+        <article class="recent-item" data-status="{{ s.status }}">
+          <div class="recent-main">
+            <h4>{{ s.title|default:'Untitled Session' }}</h4>
+            <p>
+              <span class="mono">{{ s.category }}</span>
+              <span class="dot">•</span>
+              <span class="mono">{{ s.difficulty }}</span>
+              <span class="dot">•</span>
+              <span class="mono">{{ s.created_at|date:'M d, Y' }}</span>
+            </p>
+          </div>
+          <div class="recent-meta">
+            <span class="badge {{ s.status }}">{{ s.status }}</span>
+            {% if s.overall_score is not None %}
+              <span class="recent-score">{{ s.overall_score|floatformat:1 }}/10</span>
+            {% else %}
+              <span class="recent-score muted">—</span>
+            {% endif %}
+            {% if s.status == 'completed' %}
+              <a href="{% url 'results' s.id %}">Results</a>
+            {% else %}
+              <a href="{% url 'interview_room' s.id %}">Continue</a>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+    <p class="recent-filter-empty" id="history-filter-empty" hidden>No sessions match this filter.</p>
   {% else %}
     <div class="empty">
       <p>You haven't completed any sessions yet.</p>
@@ -59,4 +61,8 @@
   {% endif %}
 </section>
 
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/history.js' %}"></script>
 {% endblock %}

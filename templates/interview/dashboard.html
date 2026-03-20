@@ -1,89 +1,117 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Dashboard | InterviewAI{% endblock %}
 
 {% block content %}
 
-<!-- Hero -->
-<section class="card hero">
-  <div class="hero-strip">
-    <div class="hero-pill">Live platform</div>
-  </div>
-  <h1>Welcome back, <span class="accent">{{ request.user.username }}</span></h1>
-  <p>Track your performance and sharpen your interview skills.</p>
-  <div class="actions">
-    <a class="button" href="{% url 'new_interview' %}">＋ Start new interview</a>
-    <a class="button alt" href="{% url 'history' %}">View full history</a>
-  </div>
-</section>
+<div class="dashboard-layout">
+  <section class="card dash-hero reveal">
+    <div class="dash-hero-glow"></div>
+    <div class="dash-hero-copy">
+      <p class="dash-kicker">Performance cockpit</p>
+      <h1>Welcome back, <span>{{ request.user.username }}</span></h1>
+      <p>Track momentum, review recent attempts, and jump back into interview practice in one place.</p>
+      <div class="actions">
+        <a class="button" href="{% url 'new_interview' %}">Start new interview</a>
+        <a class="button alt" href="{% url 'history' %}">View full history</a>
+      </div>
+    </div>
 
-<!-- Stats row -->
-<div class="grid three" style="margin-bottom:24px;">
-  <article class="card stat">
-    <div class="label">Total sessions</div>
-    <div class="value">{{ stats.total|default:0 }}</div>
-    <div class="value-sub">all time</div>
-  </article>
-  <article class="card stat">
-    <div class="label">Completed</div>
-    <div class="value">{{ stats.completed|default:0 }}</div>
-    <div class="value-sub">sessions finished</div>
-  </article>
-  <article class="card stat">
-    <div class="label">Avg score</div>
-    <div class="value">{{ stats.avg_score|default:0|floatformat:1 }}<span style="font-size:1rem;color:var(--text-3)">/10</span></div>
-    <div class="value-sub">across all sessions</div>
-  </article>
+    <div class="dash-hero-panel" data-total="{{ stats.total|default:0 }}" data-completed="{{ stats.completed|default:0 }}">
+      <p class="panel-title">Session momentum</p>
+      <div class="momentum-track" aria-hidden="true">
+        <span class="momentum-fill" id="session-momentum-fill"></span>
+      </div>
+      <p class="panel-sub" id="session-momentum-label">{{ stats.completed|default:0 }} of {{ stats.total|default:0 }} sessions completed</p>
+    </div>
+  </section>
+
+  <section class="dash-kpi-grid">
+    <article class="card dash-kpi reveal">
+      <p>Total sessions</p>
+      <h3 class="count-up" data-value="{{ stats.total|default:0 }}">{{ stats.total|default:0 }}</h3>
+      <small>all recorded attempts</small>
+    </article>
+    <article class="card dash-kpi reveal">
+      <p>Completed</p>
+      <h3 class="count-up" data-value="{{ stats.completed|default:0 }}">{{ stats.completed|default:0 }}</h3>
+      <small>finished end-to-end</small>
+    </article>
+    <article class="card dash-kpi reveal">
+      <p>Average score</p>
+      <h3 class="count-up" data-value="{{ stats.avg_score|default:0|floatformat:1 }}" data-decimals="1">{{ stats.avg_score|default:0|floatformat:1 }}<span>/10</span></h3>
+      <small>across all sessions</small>
+    </article>
+  </section>
+
+  <section class="card dash-insight reveal" data-score="{{ stats.avg_score|default:0|floatformat:1 }}">
+    <div class="score-ring" id="score-ring">
+      <div>
+        <strong id="score-ring-value">{{ stats.avg_score|default:0|floatformat:1 }}</strong>
+        <small>avg score</small>
+      </div>
+    </div>
+    <div class="insight-copy">
+      <h3>Performance pulse</h3>
+      <p>Your average score is being tracked continuously across sessions. Use this signal to iterate on weak areas and push toward interview readiness.</p>
+      <a href="{% url 'new_interview' %}" class="button">Start a focused practice round</a>
+    </div>
+  </section>
+
+  <section class="card dash-recent reveal">
+    <div class="dash-recent-head">
+      <h3>Recent sessions</h3>
+      {% if recent %}
+      <div class="filter-row" role="group" aria-label="Filter recent sessions">
+        <button type="button" class="chip-filter is-active" data-filter="all">All</button>
+        <button type="button" class="chip-filter" data-filter="completed">Completed</button>
+        <button type="button" class="chip-filter" data-filter="active">Active</button>
+        <button type="button" class="chip-filter" data-filter="pending">Pending</button>
+        <button type="button" class="chip-filter" data-filter="abandoned">Abandoned</button>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if recent %}
+      <div class="recent-stack" id="recent-stack">
+        {% for s in recent %}
+          <article class="recent-item" data-status="{{ s.status }}">
+            <div class="recent-main">
+              <h4>{{ s.title|default:'Untitled Session' }}</h4>
+              <p>
+                <span class="mono">{{ s.category }}</span>
+                <span class="dot">•</span>
+                <span class="mono">{{ s.created_at|date:'M d, Y' }}</span>
+              </p>
+            </div>
+            <div class="recent-meta">
+              <span class="badge {{ s.status }}">{{ s.status }}</span>
+              {% if s.overall_score is not None %}
+                <span class="recent-score">{{ s.overall_score|floatformat:1 }}/10</span>
+              {% else %}
+                <span class="recent-score muted">—</span>
+              {% endif %}
+              {% if s.status == 'completed' %}
+                <a href="{% url 'results' s.id %}">View results</a>
+              {% else %}
+                <a href="{% url 'interview_room' s.id %}">Continue</a>
+              {% endif %}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+      <p class="recent-filter-empty" id="recent-filter-empty" hidden>No sessions match this filter.</p>
+    {% else %}
+      <div class="empty">
+        <p>No sessions yet. Start your first interview to track your progress.</p>
+        <a class="button" href="{% url 'new_interview' %}">Create first session</a>
+      </div>
+    {% endif %}
+  </section>
 </div>
 
-<!-- Recent sessions -->
-<section class="card section-pad">
-  <h3>Recent sessions</h3>
+{% endblock %}
 
-  {% if recent %}
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th>Score</th>
-            <th>Date</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in recent %}
-            <tr>
-              <td style="color:var(--text);font-weight:500;">{{ s.title|default:'Untitled Session' }}</td>
-              <td><span class="mono">{{ s.category }}</span></td>
-              <td><span class="badge {{ s.status }}">{{ s.status }}</span></td>
-              <td>
-                {% if s.overall_score is not None %}
-                  <span style="color:var(--cyan);font-family:var(--font-mono);font-weight:700;">{{ s.overall_score|floatformat:1 }}/10</span>
-                {% else %}
-                  <span style="color:var(--text-3)">—</span>
-                {% endif %}
-              </td>
-              <td class="muted mono">{{ s.created_at|date:'M d, Y' }}</td>
-              <td>
-                {% if s.status == 'completed' %}
-                  <a href="{% url 'results' s.id %}">View results →</a>
-                {% else %}
-                  <a href="{% url 'interview_room' s.id %}">Continue →</a>
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% else %}
-    <div class="empty">
-      <p>No sessions yet. Start your first interview to track your progress.</p>
-      <a class="button" href="{% url 'new_interview' %}">Create first session</a>
-    </div>
-  {% endif %}
-</section>
-
+{% block extra_js %}
+  <script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

@@ -1,52 +1,50 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Results | InterviewAI{% endblock %}
 
 {% block content %}
 
-<!-- Hero -->
-<section class="card hero">
+<section class="card page-hero page-hero-results reveal">
   <div class="hero-strip"><div class="hero-pill">Session complete</div></div>
-  <h1>Session <span class="accent">Results</span></h1>
+  <h1>Session results snapshot</h1>
   <p>
-    <span class="mono" style="color:var(--cyan);">{{ session.category }}</span>
-    <span style="color:var(--text-3);margin:0 8px;">·</span>
-    <span class="mono" style="color:var(--text-3);">{{ session.difficulty }}</span>
+    <span class="mono results-meta-accent">{{ session.category }}</span>
+    <span class="results-meta-sep">·</span>
+    <span class="mono">{{ session.difficulty }}</span>
     {% if session.title %}
-      <span style="color:var(--text-3);margin:0 8px;">·</span>
-      <span style="color:var(--text-2);">{{ session.title }}</span>
+      <span class="results-meta-sep">·</span>
+      <span class="results-meta-title">{{ session.title }}</span>
     {% endif %}
   </p>
   <div class="actions">
-    <a class="button" href="{% url 'new_interview' %}">＋ New interview</a>
+    <a class="button" href="{% url 'new_interview' %}">New interview</a>
     <a class="button alt" href="{% url 'history' %}">View history</a>
   </div>
 </section>
 
-<!-- Score stats -->
-<div class="grid three" style="margin-bottom:24px;">
-  <article class="card stat">
+<div class="results-top-grid">
+  <article class="card stat reveal">
     <div class="label">Overall score</div>
-    <div class="value">{{ session.overall_score|default:0|floatformat:1 }}<span style="font-size:1rem;color:var(--text-3)">/10</span></div>
+    <div class="value count-up" data-value="{{ session.overall_score|default:0|floatformat:1 }}" data-decimals="1">{{ session.overall_score|default:0|floatformat:1 }}<span>/10</span></div>
   </article>
-  <article class="card stat">
+  <article class="card stat reveal">
     <div class="label">Confidence</div>
-    <div class="value">{{ session.confidence_score|default:0|floatformat:1 }}<span style="font-size:1rem;color:var(--text-3)">/10</span></div>
+    <div class="value count-up" data-value="{{ session.confidence_score|default:0|floatformat:1 }}" data-decimals="1">{{ session.confidence_score|default:0|floatformat:1 }}<span>/10</span></div>
   </article>
-  <article class="card stat">
+  <article class="card stat reveal">
     <div class="label">Sentiment</div>
-    <div class="value">{{ session.sentiment_score|default:0|floatformat:2 }}</div>
+    <div class="value count-up" data-value="{{ session.sentiment_score|default:0|floatformat:2 }}" data-decimals="2">{{ session.sentiment_score|default:0|floatformat:2 }}</div>
   </article>
 </div>
 
-<!-- Feedback + tips -->
 <div class="grid two" style="margin-bottom:24px;">
-  <article class="card section-pad">
+  <article class="card section-pad reveal">
     <h3>Feedback summary</h3>
-    <p class="muted" style="margin-bottom:18px;">{{ session.feedback_summary|default:'No summary generated.' }}</p>
+    <p class="muted results-feedback">{{ session.feedback_summary|default:'No summary generated.' }}</p>
 
     {% if session.readiness %}
-      <div style="margin-bottom:18px;">
-        <div class="muted" style="font-size:0.78rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">Readiness</div>
+      <div class="results-readiness-wrap">
+        <div class="muted results-mini-head">Readiness</div>
         <span class="readiness-tag">{{ session.readiness }}</span>
       </div>
     {% endif %}
@@ -63,7 +61,7 @@
     {% endif %}
   </article>
 
-  <article class="card section-pad">
+  <article class="card section-pad reveal">
     <h3>Improvement tips</h3>
     {% if session.improvement_tips %}
       <ul class="insight-list tips">
@@ -77,8 +75,7 @@
   </article>
 </div>
 
-<!-- Answer breakdown -->
-<section class="card section-pad">
+<section class="card section-pad reveal" data-page="results">
   <h3>Answer breakdown</h3>
   {% if answers %}
     <div class="answers-list">
@@ -88,20 +85,20 @@
 
           <p><strong>Your answer:</strong> {{ answer.answer_text|default:'No answer recorded.' }}</p>
 
-          <div style="display:flex;flex-wrap:wrap;gap:20px;margin:10px 0;">
+          <div class="answer-metrics-row">
             <div>
-              <div class="muted" style="font-size:0.75rem;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px;">Score</div>
-              <span style="color:var(--cyan);font-family:var(--font-mono);font-size:1.1rem;font-weight:700;">{{ answer.score|default:0|floatformat:1 }}/10</span>
+              <div class="muted results-mini-head">Score</div>
+              <span class="answer-metric-value">{{ answer.score|default:0|floatformat:1 }}/10</span>
             </div>
             <div>
-              <div class="muted" style="font-size:0.75rem;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:4px;">Sentiment</div>
+              <div class="muted results-mini-head">Sentiment</div>
               <span class="mono">{{ answer.sentiment|default:'—' }} ({{ answer.sentiment_score|default:0|floatformat:2 }})</span>
             </div>
           </div>
 
           {% if answer.keywords_matched %}
             <div>
-              <div class="muted" style="font-size:0.75rem;font-family:var(--font-mono);text-transform:uppercase;margin-bottom:6px;">Keywords matched</div>
+              <div class="muted results-mini-head">Keywords matched</div>
               <div class="keyword-chips">
                 {% for kw in answer.keywords_matched %}
                   <span class="keyword-chip">{{ kw }}</span>
@@ -126,4 +123,8 @@
   {% endif %}
 </section>
 
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/results.js' %}"></script>
 {% endblock %}

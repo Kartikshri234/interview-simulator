@@ -1,18 +1,19 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Profile | InterviewAI{% endblock %}
 
 {% block content %}
 
-<section class="card hero">
+<section class="card page-hero page-hero-profile reveal">
   <div class="hero-strip"><div class="hero-pill">Your account</div></div>
-  <h1>Your <span class="accent">Profile</span></h1>
+  <h1>Your profile</h1>
   <p>Update your info to personalize future interview sessions.</p>
 </section>
 
 <div class="grid two">
 
   <!-- Profile form -->
-  <article class="card section-pad">
+  <article class="card section-pad reveal">
     <h3>Profile details</h3>
     <form method="post" enctype="multipart/form-data" action="{% url 'profile' %}" id="profile-form">
       {% csrf_token %}
@@ -78,7 +79,7 @@
   </article>
 
   <!-- Stats + avatar display -->
-  <article class="card section-pad" style="display:flex;flex-direction:column;gap:20px;">
+  <article class="card section-pad profile-side-panel reveal">
 
     <div class="avatar-wrap">
       {% if request.user.avatar %}
@@ -86,11 +87,11 @@
       {% else %}
         <div class="avatar-placeholder" id="profile-avatar-display">{{ request.user.initials }}</div>
       {% endif %}
-      <div style="text-align:center;">
-        <div style="font-family:var(--font-head);font-weight:700;font-size:1.1rem;">{{ request.user.username }}</div>
+      <div class="profile-identity">
+        <div class="profile-identity-name">{{ request.user.username }}</div>
         <div class="muted mono">{{ request.user.email }}</div>
         {% if request.user.target_role %}
-          <div style="margin-top:6px;font-size:0.85rem;color:var(--cyan);">{{ request.user.target_role }}</div>
+          <div class="profile-role">{{ request.user.target_role }}</div>
         {% endif %}
       </div>
     </div>
@@ -98,19 +99,19 @@
     <hr class="divider">
 
     <div>
-      <div class="muted" style="font-size:0.78rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;">Progress snapshot</div>
-      <div class="grid" style="gap:10px;">
-        <div class="card stat" style="padding:16px 18px;">
+      <div class="muted profile-mini-head">Progress snapshot</div>
+      <div class="grid profile-stat-grid">
+        <div class="card stat profile-stat-card">
           <div class="label">Total sessions</div>
-          <div class="value" style="font-size:1.5rem;">{{ stats.total|default:0 }}</div>
+          <div class="value profile-stat-value">{{ stats.total|default:0 }}</div>
         </div>
-        <div class="card stat" style="padding:16px 18px;">
+        <div class="card stat profile-stat-card">
           <div class="label">Completed</div>
-          <div class="value" style="font-size:1.5rem;">{{ stats.completed|default:0 }}</div>
+          <div class="value profile-stat-value">{{ stats.completed|default:0 }}</div>
         </div>
-        <div class="card stat" style="padding:16px 18px;">
+        <div class="card stat profile-stat-card">
           <div class="label">Avg score</div>
-          <div class="value" style="font-size:1.5rem;">{{ stats.avg_score|default:0|floatformat:1 }}<span style="font-size:0.9rem;color:var(--text-3)">/10</span></div>
+          <div class="value profile-stat-value">{{ stats.avg_score|default:0|floatformat:1 }}<span>/10</span></div>
         </div>
       </div>
     </div>
@@ -120,189 +121,6 @@
 
 {% endblock %}
 
-{% block extra_head %}
-<style>
-/* ── Avatar upload zone ── */
-.avatar-upload-label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--text-3);
-  font-family: 'JetBrains Mono', monospace;
-  margin-bottom: 8px;
-}
-
-.avatar-upload-zone {
-  position: relative;
-  border: 2px dashed var(--border-2);
-  border-radius: 16px;
-  padding: 24px 20px;
-  background: var(--surface);
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 110px;
-}
-.avatar-upload-zone:hover,
-.avatar-upload-zone.drag-over {
-  border-color: var(--cyan);
-  background: var(--cyan-dim);
-  box-shadow: 0 0 0 3px var(--cyan-dim);
-}
-
-/* Hidden real file input — covers the whole zone for click-to-browse */
-.avatar-file-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 2;
-  /* override form label styles */
-  border: none !important;
-  background: none !important;
-  padding: 0 !important;
-  border-radius: 0 !important;
-}
-
-/* ── Placeholder state ── */
-.avatar-placeholder-zone {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  pointer-events: none;
-  width: 100%;
-}
-.avatar-upload-icon {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-}
-.avatar-upload-text {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.avatar-upload-main {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--text);
-}
-.avatar-upload-sub {
-  font-size: 0.78rem;
-  color: var(--text-3);
-  font-family: 'JetBrains Mono', monospace;
-}
-
-/* ── Preview state ── */
-.avatar-preview-wrap {
-  position: relative;
-  pointer-events: none;
-  z-index: 1;
-}
-.avatar-preview-wrap img {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2.5px solid var(--cyan);
-  box-shadow: 0 0 20px var(--cyan-glow);
-  display: block;
-}
-.avatar-clear-btn {
-  position: absolute;
-  top: -6px;
-  right: -6px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--red);
-  color: #fff;
-  border: none;
-  font-size: 0.65rem;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: all;
-  z-index: 3;
-  padding: 0;
-  line-height: 1;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  transition: transform 0.15s, background 0.2s;
-}
-.avatar-clear-btn:hover { transform: scale(1.15); background: #dc2626; }
-</style>
-{% endblock %}
-
 {% block extra_js %}
-<script>
-(function () {
-  const zone        = document.getElementById('avatar-drop-zone');
-  const input       = document.getElementById('avatar-input');
-  const previewWrap = document.getElementById('avatar-preview-wrap');
-  const previewImg  = document.getElementById('avatar-preview-img');
-  const placeholder = document.getElementById('avatar-placeholder-zone');
-  const clearBtn    = document.getElementById('avatar-clear-btn');
-
-  function showPreview(file) {
-    if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      previewImg.src = e.target.result;
-      previewWrap.style.display = 'block';
-      placeholder.style.display = 'none';
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function clearPreview() {
-    previewWrap.style.display = 'none';
-    placeholder.style.display = 'flex';
-    previewImg.src = '';
-    // Reset the file input so the same file can be re-selected
-    input.value = '';
-  }
-
-  // File chosen via click
-  input.addEventListener('change', function () {
-    if (input.files && input.files[0]) showPreview(input.files[0]);
-  });
-
-  // Clear button (sits on top of input, needs pointer-events + stopPropagation)
-  clearBtn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    clearPreview();
-  });
-
-  // Drag & drop
-  zone.addEventListener('dragover', function (e) {
-    e.preventDefault();
-    zone.classList.add('drag-over');
-  });
-  zone.addEventListener('dragleave', function () {
-    zone.classList.remove('drag-over');
-  });
-  zone.addEventListener('drop', function (e) {
-    e.preventDefault();
-    zone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      // Inject the dropped file into the real input
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      input.files = dt.files;
-      showPreview(file);
-    }
-  });
-})();
-</script>
+<script src="{% static 'js/profile.js' %}"></script>
 {% endblock %}

@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="auth-wrap">
-  <div class="auth-card">
+  <div class="auth-card auth-card-refresh reveal">
     <div class="auth-logo">
       <span>◈</span> InterviewAI
     </div>
@@ -11,21 +11,40 @@
     <h1>Welcome back</h1>
     <p class="subtitle">Sign in to continue your interview practice.</p>
 
-    <!-- Show reason message if redirected from an expired session -->
-    <div id="login-banner" style="display:none; color:var(--red,#f87171); margin-bottom:12px; font-size:.9rem;"></div>
+    <!-- Session-expired redirect banner -->
+    <div id="login-banner" class="auth-banner" style="display:none;"></div>
 
-    <div id="login-form">
+    <!-- Django messages (server-side errors like wrong password) -->
+    {% if messages %}
+      {% for message in messages %}
+        <p class="auth-inline-error">{{ message }}</p>
+      {% endfor %}
+    {% endif %}
+
+    <!--
+      This is a standard HTML form POST to login_view.
+      login_view calls Django's login() to create a session so
+      that @login_required template pages (dashboard, profile, etc.) work.
+      After the server redirects to /dashboard/, the page JS below
+      separately calls Auth.login() to store JWT tokens for API calls.
+    -->
+    <form method="post" action="{% url 'login' %}" id="login-form">
+      {% csrf_token %}
       <label>
         Email address
-        <input type="email" id="login-email" required autocomplete="email" placeholder="you@example.com">
+        <input type="email" name="email" id="login-email"
+               required autocomplete="email" placeholder="you@example.com">
       </label>
       <label>
         Password
-        <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••">
+        <input type="password" name="password" id="login-password"
+               required autocomplete="current-password" placeholder="••••••••">
       </label>
-      <p id="login-error" style="color:var(--red,#f87171); font-size:.88rem; min-height:1.2em; margin:6px 0 0;"></p>
-      <button id="login-btn" type="button" style="margin-top:4px; width:100%; padding:13px;">Sign in →</button>
-    </div>
+      <p id="login-error" class="auth-inline-error auth-inline-error-space"></p>
+      <button type="submit" id="login-btn" class="auth-submit-btn">
+        Sign in →
+      </button>
+    </form>
 
     <div class="auth-footer">
       No account yet? <a href="{% url 'register' %}">Create one free</a>
@@ -37,7 +56,7 @@
 {% block extra_js %}
 <script>
 (function () {
-    // Show "session expired" banner if redirected here
+    // Show "session expired" banner if redirected here with ?reason=expired
     const params = new URLSearchParams(window.location.search);
     if (params.get('reason') === 'expired') {
         const banner = document.getElementById('login-banner');
@@ -45,18 +64,18 @@
         banner.style.display = 'block';
     }
 
-    // If already authenticated, skip to dashboard
-    if (window.Auth && window.Auth.isAuthenticated()) {
-        window.location.href = '/dashboard/';
-        return;
-    }
+    const form      = document.getElementById('login-form');
+    const emailEl   = document.getElementById('login-email');
+    const passwordEl= document.getElementById('login-password');
+    const errorEl   = document.getElementById('login-error');
+    const btn       = document.getElementById('login-btn');
 
-    const emailEl    = document.getElementById('login-email');
-    const passwordEl = document.getElementById('login-password');
-    const errorEl    = document.getElementById('login-error');
-    const btn        = document.getElementById('login-btn');
+    form.addEventListener('submit', async function (e) {
+        // Let the native HTML form submission handle the Django session login.
+        // But BEFORE that, also call Auth.login() to fetch & store JWT tokens.
+        // We prevent the default, run Auth.login(), then manually submit the form.
+        e.preventDefault();
 
-    async function doLogin() {
         const email    = emailEl.value.trim();
         const password = passwordEl.value;
 
@@ -65,27 +84,27 @@
             return;
         }
 
-        btn.disabled      = true;
-        btn.textContent   = 'Signing in…';
+        btn.disabled     = true;
+        btn.textContent  = 'Signing in…';
         errorEl.textContent = '';
 
-        try {
-            await window.Auth.login(email, password);
-            window.location.href = '/dashboard/';
-        } catch (err) {
-            errorEl.textContent = err.message || 'Login failed. Please try again.';
-            btn.disabled      = false;
-            btn.textContent   = 'Sign in →';
+        // Step 1 — Get JWT tokens and store them in localStorage
+        // (Auth.login calls /api/auth/token/ which returns access + refresh)
+        if (window.Auth) {
+            try {
+                await window.Auth.login(email, password);
+            } catch (err) {
+                // Wrong credentials — show error, don't submit the form
+                errorEl.textContent = err.message || 'Invalid email or password.';
+                btn.disabled    = false;
+                btn.textContent = 'Sign in →';
+                return;
+            }
         }
-    }
 
-    btn.addEventListener('click', doLogin);
-
-    // Allow Enter key to submit
-    [emailEl, passwordEl].forEach(el => {
-        el.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter') doLogin();
-        });
+        // Step 2 — Submit the form normally so Django creates a session too.
+        // This lets @login_required views (dashboard, profile, etc.) work.
+        form.submit();
     });
 })();
 </script>

@@ -4,15 +4,15 @@
 
 {% block content %}
 
-<section class="card hero">
+<section class="card page-hero page-hero-room reveal">
   <div class="hero-strip"><div class="hero-pill">Live session</div></div>
   <h1>{{ session.title|default:'Interview Session' }}</h1>
   <p>
-    <span class="mono" style="color:var(--cyan);">{{ session.category }}</span>
-    <span style="color:var(--text-3);margin:0 8px;">·</span>
-    <span class="mono" style="color:var(--text-3);">{{ session.difficulty }}</span>
-    <span style="color:var(--text-3);margin:0 8px;">·</span>
-    <span class="mono" style="color:var(--text-3);">{{ session.total_questions }} questions</span>
+    <span class="mono results-meta-accent">{{ session.category }}</span>
+    <span class="results-meta-sep">·</span>
+    <span class="mono">{{ session.difficulty }}</span>
+    <span class="results-meta-sep">·</span>
+    <span class="mono">{{ session.total_questions }} questions</span>
   </p>
   <div id="room-status">Ready to start.</div>
 </section>
@@ -20,7 +20,7 @@
 <div class="grid two">
 
   <!-- Question + answer -->
-  <article class="card section-pad">
+  <article class="card section-pad reveal">
     <h3>Current question</h3>
 
     <div class="room-question" id="question-text">
@@ -40,34 +40,34 @@
   </article>
 
   <!-- Controls -->
-  <article class="card section-pad" style="display:flex;flex-direction:column;gap:20px;">
+  <article class="card section-pad room-side-panel reveal">
     <div>
       <h3>Session controls</h3>
       <div class="actions">
-        <button id="start-session-btn" type="button">▶ Start session</button>
-        <button id="end-session-btn" type="button" class="button alt">⏹ End &amp; view results</button>
+        <button id="start-session-btn" type="button">Start session</button>
+        <button id="end-session-btn" type="button" class="button alt">End and view results</button>
       </div>
     </div>
 
     <hr class="divider">
 
     <div>
-      <div class="muted" style="font-size:0.8rem;font-family:var(--font-mono);margin-bottom:8px;">SESSION INFO</div>
-      <div style="display:grid;gap:8px;">
-        <div style="display:flex;justify-content:space-between;font-size:0.88rem;">
-          <span style="color:var(--text-3);">Session ID</span>
+      <div class="muted room-mini-head">Session info</div>
+      <div class="room-info-list">
+        <div class="room-info-row">
+          <span>Session ID</span>
           <span class="mono">{{ session.id }}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:0.88rem;">
-          <span style="color:var(--text-3);">Status</span>
+        <div class="room-info-row">
+          <span>Status</span>
           <span class="badge {{ session.status }}">{{ session.status }}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:0.88rem;">
-          <span style="color:var(--text-3);">Category</span>
+        <div class="room-info-row">
+          <span>Category</span>
           <span class="mono">{{ session.category }}</span>
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:0.88rem;">
-          <span style="color:var(--text-3);">Difficulty</span>
+        <div class="room-info-row">
+          <span>Difficulty</span>
           <span class="mono">{{ session.difficulty }}</span>
         </div>
       </div>
