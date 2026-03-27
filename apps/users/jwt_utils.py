@@ -1,9 +1,5 @@
 """
 jwt_utils.py — Custom JWT serializer + token helpers
-
-Embeds extra user claims into the access token payload so the
-frontend can read username, email, role and level without an
-extra /profile/ round-trip.
 """
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -26,21 +22,22 @@ class TokenRefreshThrottle(AnonRateThrottle):
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-    Adds the following claims to the ACCESS token payload:
-      - username
-      - email
-      - experience_level
-      - target_role
-      - is_staff
-    These are readable by the frontend (e.g. to show the user's name
-    in the navbar) without decoding needing a separate API call.
+    Fixes the username_field so simplejwt uses 'email' as the login
+    credential (matching CustomUser.USERNAME_FIELD = 'email').
+
+    Without this override, the default serializer still labels its
+    credential field 'username' which means the frontend must send
+    { username: '...' } instead of { email: '...' } — causing 400s.
     """
+
+    # ← THIS is the critical fix: tell simplejwt the login field is 'email'
+    username_field = 'email'
 
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
 
-        # Identity claims
+        # Identity claims embedded in the access token
         token['username']         = user.username
         token['email']            = user.email
 

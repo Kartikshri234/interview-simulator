@@ -8,22 +8,45 @@ from .models import CustomUser
 
 
 def login_view(request):
+    """
+    Handles both GET (show form) and POST (authenticate).
+
+    On POST we authenticate the user and establish a Django SESSION
+    (via login()) so that @login_required template views keep working.
+    The JWT tokens are issued separately by the frontend calling
+    /api/auth/token/ — but the session ensures server-rendered pages
+    (dashboard, profile, history, etc.) can also verify the user.
+    """
     if request.user.is_authenticated:
         return redirect('dashboard')
+
     if request.method == 'POST':
         email    = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
+
+        if not email or not password:
+            messages.error(request, 'Please enter your email and password.')
+            return render(request, 'users/login.html')
+
+        # authenticate() works because USERNAME_FIELD = 'email' and
+        # ModelBackend tries the USERNAME_FIELD by default.
         user = authenticate(request, username=email, password=password)
-        if user:
+
+        if user is not None and user.is_active:
+            # Establish Django session so @login_required pages work
             login(request, user)
-            return redirect('dashboard')
+            next_url = request.GET.get('next', '/dashboard/')
+            return redirect(next_url)
+
         messages.error(request, 'Invalid email or password.')
+
     return render(request, 'users/login.html')
 
 
 def register_view(request):
     if request.user.is_authenticated:
         return redirect('dashboard')
+
     if request.method == 'POST':
         username  = request.POST.get('username', '').strip()
         email     = request.POST.get('email', '').strip()
@@ -47,9 +70,11 @@ def register_view(request):
                 username=username, email=email, password=password,
                 target_role=target, experience_level=exp,
             )
+            # Log the user in via session immediately after registration
             login(request, user)
             messages.success(request, f'Welcome, {username}! Your account is ready.')
             return redirect('dashboard')
+
     return render(request, 'users/register.html')
 
 
@@ -63,8 +88,8 @@ def profile_view(request):
     if request.method == 'POST':
         u = request.user
         new_username = request.POST.get('username', u.username).strip()
-        # Check username uniqueness on profile update (exclude current user)
-        if new_username != u.username and CustomUser.objects.filter(username__iexact=new_username).exclude(pk=u.pk).exists():
+        if new_username != u.username and CustomUser.objects.filter(
+                username__iexact=new_username).exclude(pk=u.pk).exists():
             messages.error(request, 'That username is already taken.')
             return redirect('profile')
         u.username         = new_username
