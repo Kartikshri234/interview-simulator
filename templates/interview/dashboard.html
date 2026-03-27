@@ -15,6 +15,7 @@
       <div class="actions">
         <a class="button" href="{% url 'new_interview' %}">Start new interview →</a>
         <a class="button alt" href="{% url 'history' %}">View full history</a>
+        <a class="button alt" href="{% url 'bookmarks' %}">Bookmarks</a>
       </div>
     </div>
 
@@ -44,6 +45,12 @@
       <h3 class="count-up" data-value="{{ stats.avg_score|default:0|floatformat:1 }}" data-decimals="1">{{ stats.avg_score|default:0|floatformat:1 }}<span>/10</span></h3>
       <small>across all sessions</small>
     </article>
+    <!-- Feature 16: Daily streak KPI -->
+    <article class="card dash-kpi reveal streak-kpi">
+      <p>🔥 Daily streak</p>
+      <h3 class="count-up" data-value="{{ streak|default:0 }}">{{ streak|default:0 }}</h3>
+      <small>consecutive days</small>
+    </article>
   </section>
 
   <!-- Score insight -->
@@ -58,6 +65,42 @@
       <h3>Performance pulse</h3>
       <p>Your average score is tracked continuously across all sessions. Use this signal to iterate on weak areas and steadily push toward interview readiness.</p>
       <a href="{% url 'new_interview' %}" class="button">Start a focused practice round →</a>
+    </div>
+  </section>
+
+  <!-- Feature 11: Smart recommendation card -->
+  {% if recommendation %}
+  <section class="card section-pad reveal" style="background:var(--primary-dim);border-color:var(--primary-glow);">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="font-size:28px;">🎯</div>
+      <div style="flex:1;">
+        <h3 style="margin:0 0 4px;">Recommended next topic</h3>
+        <p style="margin:0;color:var(--text-2);">
+          Your weakest area is <strong style="color:var(--primary);">{{ recommendation.category|title }}</strong>
+          with an average score of <strong>{{ recommendation.avg }}/10</strong>.
+          Focus here to improve your overall readiness.
+        </p>
+      </div>
+      <a class="button" href="{% url 'new_interview' %}?category={{ recommendation.category }}">
+        Practice {{ recommendation.category|title }} →
+      </a>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Feature 13: Mock interview mode CTA -->
+  <section class="card section-pad reveal" style="border-color:var(--warning);background:var(--warning-dim);">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="font-size:28px;">🎤</div>
+      <div style="flex:1;">
+        <h3 style="margin:0 0 4px;">Full mock interview</h3>
+        <p style="margin:0;color:var(--text-2);">
+          Simulate a real 45-minute interview across mixed topics. Get a hiring-decision style report at the end.
+        </p>
+      </div>
+      <a class="button" href="{% url 'new_interview' %}?mode=mock" style="background:var(--warning);box-shadow:none;">
+        Start mock interview →
+      </a>
     </div>
   </section>
 
@@ -110,7 +153,12 @@
         {% for s in recent %}
           <article class="recent-item" data-status="{{ s.status }}">
             <div class="recent-main">
-              <h4>{{ s.title|default:'Untitled Session' }}</h4>
+              <h4>
+                {{ s.title|default:'Untitled Session' }}
+                {% if s.session_type == 'mock' %}
+                  <span class="mono" style="font-size:10px;color:var(--warning);margin-left:6px;">MOCK</span>
+                {% endif %}
+              </h4>
               <p>
                 <span class="mono">{{ s.category }}</span>
                 <span class="dot">·</span>

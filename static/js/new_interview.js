@@ -13,14 +13,13 @@
         const formData = new FormData(form);
         const payload  = {
             title:           (formData.get('title') || '').toString().trim(),
-            category:        formData.get('category'),
-            difficulty:      formData.get('difficulty'),
+            category:        formData.get('category') || 'python',
+            difficulty:      formData.get('difficulty') || 'medium',
             total_questions: Number(formData.get('total_questions') || 5),
+            session_type:    formData.get('session_type') || 'standard',  // Feature 13
         };
 
         try {
-            // Use Auth.apiCall so the JWT access token is sent automatically,
-            // and the token is silently refreshed if it's about to expire.
             const response = await window.Auth.apiCall('/api/interview/sessions/', {
                 method: 'POST',
                 body:   JSON.stringify(payload),

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class CustomUser(AbstractUser):
@@ -12,6 +13,10 @@ class CustomUser(AbstractUser):
         choices=[('junior', 'Junior'), ('mid', 'Mid-level'), ('senior', 'Senior')],
         default='mid',
     )
+    # Feature 16: Daily streak
+    daily_streak  = models.IntegerField(default=0)
+    last_active   = models.DateField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     USERNAME_FIELD  = 'email'
@@ -23,3 +28,17 @@ class CustomUser(AbstractUser):
     @property
     def initials(self):
         return (self.username or self.email)[0].upper()
+
+    def update_streak(self):
+        """Call after each session completion or daily login."""
+        today = timezone.now().date()
+        if self.last_active is None:
+            self.daily_streak = 1
+        elif self.last_active == today:
+            return  # already updated today
+        elif (today - self.last_active).days == 1:
+            self.daily_streak += 1
+        else:
+            self.daily_streak = 1
+        self.last_active = today
+        self.save(update_fields=['daily_streak', 'last_active'])

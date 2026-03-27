@@ -6,20 +6,37 @@
 
 <section class="card page-hero reveal">
   <div class="hero-strip">
-    <div class="hero-pill">New session</div>
+    <div class="hero-pill" id="session-mode-pill">New session</div>
   </div>
-  <h1>Create a focused interview session</h1>
+  <h1 id="new-interview-heading">Create a focused interview session</h1>
   <p>Pick a category, set your difficulty, and launch a tailored mock round in seconds.</p>
 </section>
+
+<!-- Feature 13: Mock interview banner (shown when ?mode=mock) -->
+<div id="mock-banner" class="card section-pad reveal" style="display:none;border-color:var(--warning);background:var(--warning-dim);margin-bottom:0;">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <span style="font-size:28px;">🎤</span>
+    <div>
+      <h3 style="margin:0 0 4px;">Mock interview mode</h3>
+      <p style="margin:0;color:var(--text-2);">
+        10 questions will be drawn from mixed categories to simulate a real 45-minute interview.
+        You'll receive a hiring-decision style report when done.
+      </p>
+    </div>
+  </div>
+</div>
 
 <section class="card section-pad form-shell reveal" data-page="new-interview">
   <form id="new-interview-form">
     {% csrf_token %}
 
+    <!-- Hidden field for session type (set by JS if mock mode) -->
+    <input type="hidden" name="session_type" id="session-type-field" value="standard">
+
     <div class="grid two">
       <label>
         Session title <span style="color:var(--text-3);font-size:0.75rem;">(optional)</span>
-        <input type="text" name="title" placeholder="e.g. Python backend mock">
+        <input type="text" name="title" id="session-title" placeholder="e.g. Python backend mock">
       </label>
       <label>
         Difficulty
@@ -31,12 +48,12 @@
       </label>
     </div>
 
-    <label class="compact-field">
+    <label class="compact-field" id="question-count-wrap">
       Number of questions
-      <input type="number" name="total_questions" min="1" max="20" value="5" required>
+      <input type="number" name="total_questions" id="total-questions" min="1" max="20" value="5" required>
     </label>
 
-    <div>
+    <div id="cat-section">
       <div class="field-label">Category</div>
       <div class="cat-grid">
         <div class="cat-option">
@@ -89,5 +106,39 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+// Feature 13: Pre-select category / enable mock mode from URL params
+(function () {
+  const params   = new URLSearchParams(window.location.search);
+  const mode     = params.get('mode');
+  const category = params.get('category');
+
+  if (mode === 'mock') {
+    // Switch to mock mode
+    document.getElementById('session-type-field').value = 'mock';
+    document.getElementById('new-interview-heading').textContent = 'Full mock interview';
+    document.getElementById('session-mode-pill').textContent = 'Mock mode';
+    document.getElementById('mock-banner').style.display = 'block';
+    document.getElementById('total-questions').value = 10;
+    // Grey out category in mock mode (mixed automatically)
+    const catSection = document.getElementById('cat-section');
+    catSection.style.opacity = '0.4';
+    catSection.style.pointerEvents = 'none';
+    const note = document.createElement('p');
+    note.className = 'muted';
+    note.style.marginTop = '6px';
+    note.textContent = 'Category is automatically mixed in mock mode.';
+    catSection.appendChild(note);
+    // Set title hint
+    document.getElementById('session-title').placeholder = 'e.g. Full mock — March 2026';
+  }
+
+  // Feature 11: Pre-select recommended category
+  if (category) {
+    const radio = document.querySelector('input[name="category"][value="' + category + '"]');
+    if (radio) radio.checked = true;
+  }
+})();
+</script>
 <script src="{% static 'js/new_interview.js' %}"></script>
 {% endblock %}

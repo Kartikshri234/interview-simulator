@@ -3,7 +3,7 @@ import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Count, Q
-from .models import InterviewSession, InterviewAnswer
+from .models import InterviewSession, InterviewAnswer, BookmarkedQuestion
 
 
 @login_required
@@ -18,16 +18,15 @@ def dashboard(request):
     recent = sessions[:6]
 
     # ── Feature 4: Progress Charts ──────────────────────────────
-    # Score trend: last 10 completed sessions (oldest first for chart)
     trend_qs = (
         sessions
         .filter(status='completed', overall_score__isnull=False)
         .order_by('created_at')[:10]
     )
-    trend_labels  = [s.created_at.strftime('%-d %b') for s in trend_qs]
+    # Windows-safe date formatting (%-d is Linux-only)
+    trend_labels  = [s.created_at.strftime('%d %b').lstrip('0') for s in trend_qs]
     trend_scores  = [round(s.overall_score, 1) for s in trend_qs]
 
-    # Average score per category (completed only)
     cat_qs = (
         sessions
         .filter(status='completed', overall_score__isnull=False)
@@ -45,9 +44,26 @@ def dashboard(request):
     })
     # ────────────────────────────────────────────────────────────
 
+    # ── Feature 11: Smart topic recommendations ─────────────────
+    recommendation = None
+    if cat_qs:
+        # Find category with lowest avg score (at least 1 session)
+        worst = sorted(cat_qs, key=lambda c: c['avg'])
+        if worst:
+            rec_cat = worst[0]['category']
+            rec_avg = round(worst[0]['avg'], 1)
+            recommendation = {'category': rec_cat, 'avg': rec_avg}
+    # ────────────────────────────────────────────────────────────
+
+    # ── Feature 16: Streak ──────────────────────────────────────
+    streak = getattr(request.user, 'daily_streak', 0)
+    # ────────────────────────────────────────────────────────────
+
     return render(request, 'interview/dashboard.html', {
         'stats': stats, 'recent': recent,
         'chart_data': chart_data,
+        'recommendation': recommendation,
+        'streak': streak,
     })
 
 
@@ -68,10 +84,47 @@ def interview_room(request, session_id):
 def results(request, session_id):
     session = get_object_or_404(InterviewSession, pk=session_id, user=request.user)
     answers = session.answers.all().order_by('answered_at')
-    return render(request, 'interview/results.html', {'session': session, 'answers': answers})
+
+    # Aggregate emotion data across all answers for Feature 14 (emotion heatmap)
+    emotion_totals = {}
+    emotion_count  = 0
+    for answer in answers:
+        if answer.face_emotions:
+            for emotion, value in answer.face_emotions.items():
+                emotion_totals[emotion] = emotion_totals.get(emotion, 0) + value
+            emotion_count += 1
+    avg_emotions = {}
+    if emotion_count:
+        avg_emotions = {k: round(v / emotion_count, 1) for k, v in emotion_totals.items()}
+
+    # ── Feature 15: Voice analytics aggregate ───────────────────
+    voice_stats = None
+    answers_with_voice = [a for a in answers if a.voice_analytics]
+    if answers_with_voice:
+        total_wpm   = sum(a.voice_analytics.get('wpm', 0) for a in answers_with_voice)
+        total_filler = sum(a.voice_analytics.get('filler_count', 0) for a in answers_with_voice)
+        voice_stats = {
+            'avg_wpm': round(total_wpm / len(answers_with_voice), 1),
+            'total_fillers': total_filler,
+        }
+    # ────────────────────────────────────────────────────────────
+
+    return render(request, 'interview/results.html', {
+        'session': session,
+        'answers': answers,
+        'avg_emotions': avg_emotions,
+        'avg_emotions_json': json.dumps(avg_emotions),
+        'voice_stats': voice_stats,
+    })
 
 
 @login_required
 def history(request):
     sessions = InterviewSession.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'interview/history.html', {'sessions': sessions})
+
+
+@login_required
+def bookmarks(request):
+    bmarks = BookmarkedQuestion.objects.filter(user=request.user).select_related('session').order_by('-created_at')
+    return render(request, 'interview/bookmarks.html', {'bookmarks': bmarks})

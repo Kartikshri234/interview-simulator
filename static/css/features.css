@@ -1,0 +1,102 @@
+/* ══════════════════════════════════════════════
+   InterviewAI — New Features Styles
+   Features: Streak, Bookmark, Emotion Heatmap,
+   Voice Analytics, Mock Mode, Recommendations
+   ══════════════════════════════════════════════ */
+
+/* ── Feature 16: Streak KPI card ── */
+.streak-kpi {
+  background: linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(239,68,68,0.06) 100%);
+  border-color: rgba(245,158,11,0.3) !important;
+}
+.streak-kpi p { color: var(--warning) !important; }
+.streak-kpi h3 { color: var(--warning) !important; }
+
+/* ── Feature 7: Bookmark button on answer cards ── */
+.bookmark-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-3);
+  border-radius: 8px;
+  padding: 5px 12px;
+  font: 500 0.75rem 'Inter', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+  flex-shrink: 0;
+  box-shadow: none;
+  transform: none;
+  white-space: nowrap;
+}
+.bookmark-btn:hover {
+  background: var(--primary-dim);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+.bookmark-btn:disabled {
+  opacity: 0.75;
+  cursor: default;
+  transform: none;
+}
+.bookmark-btn svg {
+  flex-shrink: 0;
+  transition: fill 0.2s;
+}
+
+/* ── Feature 14: Emotion heatmap section ── */
+#emotion-heatmap-section h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  flex-wrap: wrap;
+}
+
+/* ── Feature 13: Mock mode badge in room/history ── */
+.mock-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--warning-dim);
+  color: var(--warning);
+  border: 1px solid rgba(245,158,11,0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+/* ── Recommendation card link button ── */
+.dash-recommend-btn {
+  white-space: nowrap;
+}
+
+/* ── Answer card header with bookmark ── */
+.answer-card h4 {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Bookmarks page ── */
+.bookmarks-empty {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+/* ── Voice analytics metric values ── */
+.answer-metric-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+}
+.answer-metric-value small {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-3);
+  margin-left: 3px;
+}

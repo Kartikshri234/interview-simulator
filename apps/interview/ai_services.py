@@ -1,7 +1,8 @@
 """
 AI Service Layer
 Handles: OpenAI question generation, answer evaluation,
-         Speech-to-Text, Sentiment Analysis, DeepFace emotion detection.
+         Speech-to-Text, Sentiment Analysis, DeepFace emotion detection,
+         Voice analytics (Feature 15).
 """
 import os
 import random
@@ -158,6 +159,36 @@ def _static_questions(category, difficulty, count):
              'ideal_answer_outline': 'How indexes work, types, trade-offs.',
              'time_limit_seconds': 100},
         ],
+        'javascript': [
+            {'question_text': 'Explain the event loop in JavaScript.',
+             'expected_keywords': ['event loop', 'call stack', 'microtask', 'macrotask', 'async'],
+             'ideal_answer_outline': 'Call stack, task queue, microtask queue, how async works.',
+             'time_limit_seconds': 120},
+            {'question_text': 'What is closure in JavaScript and when would you use it?',
+             'expected_keywords': ['closure', 'scope', 'lexical', 'function', 'encapsulation'],
+             'ideal_answer_outline': 'Definition, examples, module pattern, IIFE.',
+             'time_limit_seconds': 90},
+        ],
+        'devops': [
+            {'question_text': 'What is Docker and how does it differ from a VM?',
+             'expected_keywords': ['container', 'image', 'VM', 'kernel', 'isolation', 'Dockerfile'],
+             'ideal_answer_outline': 'Containers vs VMs, Docker concepts, use-cases.',
+             'time_limit_seconds': 120},
+            {'question_text': 'Explain CI/CD and its benefits.',
+             'expected_keywords': ['CI', 'CD', 'pipeline', 'test', 'deploy', 'automation'],
+             'ideal_answer_outline': 'Continuous integration, delivery, deployment stages.',
+             'time_limit_seconds': 100},
+        ],
+        'ml': [
+            {'question_text': 'Explain the difference between overfitting and underfitting.',
+             'expected_keywords': ['overfitting', 'underfitting', 'bias', 'variance', 'regularisation'],
+             'ideal_answer_outline': 'Bias-variance tradeoff, techniques to address each.',
+             'time_limit_seconds': 120},
+            {'question_text': 'What is gradient descent and how does it work?',
+             'expected_keywords': ['gradient', 'learning rate', 'loss', 'optimiser', 'backpropagation'],
+             'ideal_answer_outline': 'Objective function, derivative, step size, variants.',
+             'time_limit_seconds': 120},
+        ],
     }
     pool = bank.get(category, bank['python'])
     random.shuffle(pool)
@@ -312,4 +343,45 @@ Return JSON with:
         'improvement_areas':  ['Add more concrete code examples', 'Deepen system design knowledge', 'Practice explaining concepts aloud'],
         'recommended_topics': ['LeetCode DSA patterns', 'System Design Primer', 'Django advanced docs'],
         'readiness':          'Ready' if avg >= 7 else ('Almost Ready' if avg >= 5 else 'Not Ready'),
+    }
+
+
+# ── 7. VOICE ANALYTICS (Feature 15) ──────────────────────────
+
+FILLER_WORDS = [
+    'um', 'uh', 'like', 'you know', 'basically', 'literally',
+    'actually', 'right', 'so', 'well', 'kind of', 'sort of',
+]
+
+
+def analyze_voice(text: str, time_taken_seconds: int = 60) -> dict:
+    """
+    Feature 15: Analyse spoken/typed answer for speech rate and filler words.
+    Works on transcribed text. time_taken_seconds defaults to 60s if not provided.
+    Returns: wpm, word_count, filler_count, filler_words list.
+    """
+    if not text or not text.strip():
+        return {'wpm': 0, 'filler_count': 0, 'filler_words': [], 'word_count': 0}
+
+    words      = text.split()
+    word_count = len(words)
+    minutes    = max(time_taken_seconds / 60, 0.1)
+    wpm        = round(word_count / minutes)
+
+    lower = text.lower()
+    found_fillers = []
+    for filler in FILLER_WORDS:
+        # Count occurrences as whole-word matches
+        import re
+        pattern = r'\b' + re.escape(filler) + r'\b'
+        matches = re.findall(pattern, lower)
+        if matches:
+            found_fillers.append({'word': filler, 'count': len(matches)})
+
+    total_fillers = sum(f['count'] for f in found_fillers)
+    return {
+        'wpm':          wpm,
+        'word_count':   word_count,
+        'filler_count': total_fillers,
+        'filler_words': found_fillers,
     }

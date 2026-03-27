@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <link rel="stylesheet" href="{% static 'css/features.css' %}">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
@@ -24,6 +25,7 @@
         <a href="{% url 'dashboard' %}">Dashboard</a>
         <a href="{% url 'new_interview' %}">New Session</a>
         <a href="{% url 'history' %}">History</a>
+        <a href="{% url 'bookmarks' %}">Bookmarks</a>
         <a href="{% url 'profile' %}">Profile</a>
         <a href="{% url 'logout' %}"
            class="btn-link danger"
@@ -40,7 +42,6 @@
       <button class="settings-btn" id="settings-open-btn" title="Settings" aria-label="Open settings">
         <span class="settings-btn-inner">
           <svg class="settings-btn-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Sliders logo -->
             <line x1="4" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
             <line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
             <line x1="4" y1="15" x2="16" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
@@ -84,55 +85,42 @@
         </div>
         <p class="settings-section-desc">Choose a colour theme for the entire app. Your preference is saved automatically.</p>
         <div class="theme-swatches">
-
           <div class="theme-swatch">
             <input type="radio" name="theme" id="theme-light" value="light">
             <label for="theme-light">
               <div class="swatch-preview swatch-light">
-                <span class="sp-bg"></span>
-                <span class="sp-nav"></span>
-                <span class="sp-acc"></span>
+                <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
               </div>
               Light
             </label>
           </div>
-
           <div class="theme-swatch">
             <input type="radio" name="theme" id="theme-dark" value="dark">
             <label for="theme-dark">
               <div class="swatch-preview swatch-dark">
-                <span class="sp-bg"></span>
-                <span class="sp-nav"></span>
-                <span class="sp-acc"></span>
+                <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
               </div>
               Dark
             </label>
           </div>
-
           <div class="theme-swatch">
             <input type="radio" name="theme" id="theme-blue" value="blue">
             <label for="theme-blue">
               <div class="swatch-preview swatch-blue">
-                <span class="sp-bg"></span>
-                <span class="sp-nav"></span>
-                <span class="sp-acc"></span>
+                <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
               </div>
               Ocean Blue
             </label>
           </div>
-
           <div class="theme-swatch">
             <input type="radio" name="theme" id="theme-rose" value="rose">
             <label for="theme-rose">
               <div class="swatch-preview swatch-rose">
-                <span class="sp-bg"></span>
-                <span class="sp-nav"></span>
-                <span class="sp-acc"></span>
+                <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
               </div>
               Rose
             </label>
           </div>
-
         </div>
       </div>
 
@@ -157,7 +145,6 @@
           <h3>Preferences</h3>
         </div>
         <p class="settings-section-desc">Fine-tune the layout and visual behaviour of the interface.</p>
-
         <div class="toggle-row">
           <div class="toggle-label">
             <span>Compact mode</span>
@@ -168,7 +155,6 @@
             <span class="toggle-track"></span>
           </label>
         </div>
-
         <div class="toggle-row">
           <div class="toggle-label">
             <span>Animations</span>
@@ -179,7 +165,6 @@
             <span class="toggle-track"></span>
           </label>
         </div>
-
       </div>
 
     </div><!-- /settings-body -->
@@ -202,7 +187,6 @@
   <!-- Settings panel JS -->
   <script>
   (function () {
-    /* ── helpers ── */
     function get(k, def) {
       try { return localStorage.getItem(k) ?? def; } catch { return def; }
     }
@@ -210,7 +194,6 @@
       try { localStorage.setItem(k, v); } catch {}
     }
 
-    /* ── Theme ── */
     const html = document.documentElement;
     let currentTheme = get('ui-theme', 'light');
 
@@ -221,17 +204,13 @@
       const radio = document.getElementById('theme-' + t);
       if (radio) radio.checked = true;
     }
-
     applyTheme(currentTheme);
-
     document.querySelectorAll('input[name="theme"]').forEach(function (r) {
       r.addEventListener('change', function () { applyTheme(this.value); });
     });
 
-    /* ── Font size ── */
     const FONT_MIN = 13, FONT_MAX = 19;
     let fontSize = parseInt(get('ui-font-size', '15'), 10);
-
     function applyFontSize(s) {
       fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, s));
       document.body.style.fontSize = fontSize + 'px';
@@ -239,16 +218,12 @@
       const lbl = document.getElementById('font-size-label');
       if (lbl) lbl.textContent = fontSize + 'px';
     }
-
     applyFontSize(fontSize);
-
     document.getElementById('font-decrease').addEventListener('click', function () { applyFontSize(fontSize - 1); });
     document.getElementById('font-increase').addEventListener('click', function () { applyFontSize(fontSize + 1); });
 
-    /* ── Compact mode ── */
     const compactCheck = document.getElementById('pref-compact');
     let isCompact = get('ui-compact', 'false') === 'true';
-
     function applyCompact(v) {
       isCompact = v;
       document.body.classList.toggle('compact-mode', v);
@@ -258,10 +233,8 @@
     applyCompact(isCompact);
     compactCheck.addEventListener('change', function () { applyCompact(this.checked); });
 
-    /* ── Animations toggle ── */
     const animCheck = document.getElementById('pref-animations');
     let animOn = get('ui-animations', 'true') === 'true';
-
     function applyAnimations(v) {
       animOn = v;
       set('ui-animations', v);
@@ -275,28 +248,14 @@
     applyAnimations(animOn);
     animCheck.addEventListener('change', function () { applyAnimations(this.checked); });
 
-    /* ── Panel open/close ── */
     const panel   = document.getElementById('settings-panel');
     const overlay = document.getElementById('settings-overlay');
-
-    function openPanel() {
-      panel.classList.add('open');
-      overlay.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-    function closePanel() {
-      panel.classList.remove('open');
-      overlay.classList.remove('open');
-      document.body.style.overflow = '';
-    }
-
+    function openPanel()  { panel.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function closePanel() { panel.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; }
     document.getElementById('settings-open-btn').addEventListener('click', openPanel);
     document.getElementById('settings-close-btn').addEventListener('click', closePanel);
     overlay.addEventListener('click', closePanel);
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') closePanel();
-    });
-
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });
   })();
   </script>
 

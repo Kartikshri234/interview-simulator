@@ -11,6 +11,10 @@
     <span class="mono results-meta-accent">{{ session.category }}</span>
     <span class="results-meta-sep">·</span>
     <span class="mono">{{ session.difficulty }}</span>
+    {% if session.session_type == 'mock' %}
+      <span class="results-meta-sep">·</span>
+      <span class="mono" style="color:var(--warning)">🎯 Mock Interview</span>
+    {% endif %}
     {% if session.title %}
       <span class="results-meta-sep">·</span>
       <span class="results-meta-title">{{ session.title }}</span>
@@ -19,6 +23,7 @@
   <div class="actions">
     <a class="button" href="{% url 'new_interview' %}">New interview →</a>
     <a class="button alt" href="{% url 'history' %}">View history</a>
+    <a class="button alt" href="{% url 'bookmarks' %}">My bookmarks</a>
   </div>
 </section>
 
@@ -72,16 +77,83 @@
     {% else %}
       <p class="muted">No tips generated for this session.</p>
     {% endif %}
+
+    {% if session.recommended_topics %}
+      <h4 style="margin-top:18px;">Recommended study topics</h4>
+      <ul class="insight-list" style="margin-top:6px;">
+        {% for topic in session.recommended_topics %}
+          <li>{{ topic }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
   </article>
 </div>
+
+<!-- ── Feature 14: Emotion Heatmap ─────────────────────────── -->
+{% if avg_emotions %}
+<section class="card section-pad reveal" id="emotion-heatmap-section">
+  <h3>Facial emotion profile
+    <span style="font-size:12px;font-weight:400;color:var(--text-2);margin-left:8px;">averaged across session</span>
+  </h3>
+  <div id="emotion-chart-wrap" style="max-width:520px;margin-top:12px;">
+    <canvas id="emotion-chart" height="180"></canvas>
+  </div>
+  <div class="emotion-legend" id="emotion-legend" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px;"></div>
+</section>
+{% endif %}
+<!-- ───────────────────────────────────────────────────────── -->
+
+<!-- ── Feature 15: Voice Analytics Summary ─────────────────── -->
+{% if voice_stats %}
+<section class="card section-pad reveal" style="margin-bottom:24px;">
+  <h3>Voice analytics</h3>
+  <div style="display:flex;gap:32px;flex-wrap:wrap;margin-top:10px;">
+    <div>
+      <div class="results-mini-head">Avg speech rate</div>
+      <span class="answer-metric-value">{{ voice_stats.avg_wpm }} <small>wpm</small></span>
+      <p class="muted" style="font-size:11px;margin-top:3px;">
+        {% if voice_stats.avg_wpm < 110 %}Too slow — aim for 120–160 wpm
+        {% elif voice_stats.avg_wpm > 180 %}A bit fast — slow down for clarity
+        {% else %}Good pace ✓{% endif %}
+      </p>
+    </div>
+    <div>
+      <div class="results-mini-head">Total filler words</div>
+      <span class="answer-metric-value">{{ voice_stats.total_fillers }}</span>
+      <p class="muted" style="font-size:11px;margin-top:3px;">
+        {% if voice_stats.total_fillers == 0 %}No fillers detected — excellent!
+        {% elif voice_stats.total_fillers < 5 %}Low filler usage — well done
+        {% elif voice_stats.total_fillers < 15 %}Moderate — practice structured pauses
+        {% else %}High — focus on eliminating filler words{% endif %}
+      </p>
+    </div>
+  </div>
+</section>
+{% endif %}
+<!-- ───────────────────────────────────────────────────────── -->
 
 <section class="card section-pad reveal" data-page="results">
   <h3>Answer breakdown</h3>
   {% if answers %}
     <div class="answers-list">
       {% for answer in answers %}
-        <article class="card answer-card">
-          <h4>Q{{ forloop.counter }}. {{ answer.question_text }}</h4>
+        <article class="card answer-card" id="answer-{{ answer.pk }}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <h4 style="flex:1;">Q{{ forloop.counter }}. {{ answer.question_text }}</h4>
+            <!-- Feature 7: Bookmark button -->
+            <button class="bookmark-btn"
+                    data-session="{{ session.id }}"
+                    data-question="{{ answer.question_text|escapejs }}"
+                    title="Bookmark this question"
+                    aria-label="Bookmark question">
+              <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+                <path d="M5 3h10a1 1 0 0 1 1 1v13l-6-3-6 3V4a1 1 0 0 1 1-1z"
+                      stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" class="bm-path"/>
+              </svg>
+              <span class="bm-label">Bookmark</span>
+            </button>
+          </div>
+
           <p><strong>Your answer:</strong> {{ answer.answer_text|default:'No answer recorded.' }}</p>
           <div class="answer-metrics-row">
             <div>
@@ -92,6 +164,19 @@
               <div class="results-mini-head">Sentiment</div>
               <span class="mono">{{ answer.sentiment|default:'—' }} ({{ answer.sentiment_score|default:0|floatformat:2 }})</span>
             </div>
+            <!-- Feature 15: Per-answer voice analytics -->
+            {% if answer.voice_analytics %}
+              <div>
+                <div class="results-mini-head">Speech rate</div>
+                <span class="mono">{{ answer.voice_analytics.wpm|default:0 }} wpm</span>
+              </div>
+              {% if answer.voice_analytics.filler_count %}
+                <div>
+                  <div class="results-mini-head">Fillers</div>
+                  <span class="mono">{{ answer.voice_analytics.filler_count }}</span>
+                </div>
+              {% endif %}
+            {% endif %}
           </div>
           {% if answer.keywords_matched %}
             <div>
@@ -122,5 +207,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  window.SESSION_ID = {{ session.id }};
+  window.EMOTION_DATA = {{ avg_emotions_json|default:'{}' }};
+</script>
 <script src="{% static 'js/results.js' %}"></script>
 {% endblock %}

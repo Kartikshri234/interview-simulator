@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Bookmarks | InterviewAI{% endblock %}
+
+{% block content %}
+
+<section class="card page-hero reveal">
+  <div class="hero-strip"><div class="hero-pill">Saved questions</div></div>
+  <h1>Bookmarked questions</h1>
+  <p>Questions you've flagged for focused re-practice. Click "Retry" to practise any question again.</p>
+  <div class="actions">
+    <a class="button" href="{% url 'new_interview' %}">New interview →</a>
+    <a class="button alt" href="{% url 'history' %}">View history</a>
+  </div>
+</section>
+
+<section class="card section-pad reveal">
+  {% if bookmarks %}
+    <div class="answers-list">
+      {% for bm in bookmarks %}
+        <article class="card answer-card" id="bm-{{ bm.pk }}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+            <h4 style="flex:1;">{{ bm.question_text }}</h4>
+            <div style="display:flex;gap:8px;">
+              <a class="button" style="font-size:12px;padding:6px 14px;"
+                 href="{% url 'interview_room' bm.session.id %}">
+                Retry →
+              </a>
+              <button class="button alt remove-bookmark-btn" style="font-size:12px;padding:6px 14px;"
+                      data-id="{{ bm.pk }}" data-target="bm-{{ bm.pk }}">
+                Remove
+              </button>
+            </div>
+          </div>
+          {% if bm.note %}
+            <p style="margin-top:8px;color:var(--text-2);">📝 {{ bm.note }}</p>
+          {% endif %}
+          <p class="muted" style="font-size:11px;margin-top:6px;">
+            Session #{{ bm.session.id }} · {{ bm.created_at|date:'M d, Y' }}
+          </p>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty">
+      <p>You haven't bookmarked any questions yet.</p>
+      <p class="muted">After completing a session, use the bookmark icon on any answer to save it here.</p>
+      <a class="button" href="{% url 'new_interview' %}">Start an interview →</a>
+    </div>
+  {% endif %}
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  document.querySelectorAll('.remove-bookmark-btn').forEach(function(btn) {
+    btn.addEventListener('click', async function() {
+      const id     = btn.dataset.id;
+      const target = document.getElementById(btn.dataset.target);
+      try {
+        const res = await window.Auth.apiCall('/api/interview/bookmarks/' + id + '/delete/', { method: 'DELETE' });
+        if (res.ok && target) target.remove();
+      } catch (e) {
+        alert('Could not remove bookmark.');
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}

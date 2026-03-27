@@ -1,3 +1,4 @@
+import random
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -8,46 +9,37 @@ from rest_framework.views import APIView
 from .ai_services import (
     analyze_face_base64,
     analyze_sentiment,
+    analyze_voice,
     evaluate_answer,
     generate_questions,
     generate_summary,
     transcribe_audio,
 )
-from .models import InterviewAnswer, InterviewSession
+from .models import BookmarkedQuestion, InterviewAnswer, InterviewSession
 
 
 # In-memory runtime state for active sessions (sufficient for local/dev usage).
 SESSION_RUNTIME_STATE = {}
+
+ALL_CATEGORIES = [
+    'python', 'django', 'dsa', 'system_design',
+    'behavioral', 'javascript', 'database', 'devops', 'ml',
+]
 
 
 class InterviewSessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = InterviewSession
         fields = (
-            "id",
-            "title",
-            "category",
-            "difficulty",
-            "status",
-            "total_questions",
-            "overall_score",
-            "confidence_score",
-            "sentiment_score",
-            "readiness",
-            "created_at",
-            "started_at",
-            "ended_at",
+            "id", "title", "category", "difficulty", "session_type",
+            "status", "total_questions", "overall_score",
+            "confidence_score", "sentiment_score", "readiness",
+            "recommended_topics", "created_at", "started_at", "ended_at",
         )
         read_only_fields = (
-            "id",
-            "status",
-            "overall_score",
-            "confidence_score",
-            "sentiment_score",
-            "readiness",
-            "created_at",
-            "started_at",
-            "ended_at",
+            "id", "status", "overall_score", "confidence_score",
+            "sentiment_score", "readiness", "recommended_topics",
+            "created_at", "started_at", "ended_at",
         )
 
 
@@ -76,9 +68,26 @@ def _ensure_runtime_state(session: InterviewSession):
         return state
 
     count = max(1, int(session.total_questions or 5))
-    questions = generate_questions(session.category, session.difficulty, count)
-    if not questions:
-        questions = generate_questions("python", "medium", count)
+
+    # ── Feature 13: Full mock interview mode ────────────────────
+    if session.session_type == 'mock':
+        categories = ALL_CATEGORIES.copy()
+        random.shuffle(categories)
+        questions = []
+        per_cat = max(1, count // len(categories))
+        remaining = count
+        for cat in categories:
+            if remaining <= 0:
+                break
+            n = min(per_cat, remaining)
+            qs = generate_questions(cat, session.difficulty, n)
+            questions.extend(qs[:n])
+            remaining -= n
+        random.shuffle(questions)
+    else:
+        questions = generate_questions(session.category, session.difficulty, count)
+        if not questions:
+            questions = generate_questions("python", "medium", count)
 
     state = {"questions": questions, "index": 0}
     SESSION_RUNTIME_STATE[session.pk] = state
@@ -96,13 +105,15 @@ def _finalize_session(session: InterviewSession):
         session.feedback_summary = "Session ended without submitted answers."
         session.improvement_tips = ["Attempt each question before ending the interview."]
         session.strengths = ["Session was started"]
+        session.recommended_topics = []
         session.readiness = "Not Ready"
         session.save()
+        _update_streak(session.user)
         return
 
     avg_score = round(answers_qs.aggregate(v=Avg("score"))["v"] or 0.0, 1)
-    avg_conf = round(answers_qs.aggregate(v=Avg("confidence_score"))["v"] or 0.0, 1)
-    avg_sent = round(answers_qs.aggregate(v=Avg("sentiment_score"))["v"] or 0.0, 3)
+    avg_conf  = round(answers_qs.aggregate(v=Avg("confidence_score"))["v"] or 0.0, 1)
+    avg_sent  = round(answers_qs.aggregate(v=Avg("sentiment_score"))["v"] or 0.0, 3)
 
     summary_payload = {
         "category": session.category,
@@ -129,8 +140,20 @@ def _finalize_session(session: InterviewSession):
     session.feedback_summary = summary.get("overall_feedback", "")
     session.improvement_tips = summary.get("improvement_areas", [])
     session.strengths = summary.get("strengths", [])
+    session.recommended_topics = summary.get("recommended_topics", [])
     session.readiness = summary.get("readiness", "")
     session.save()
+
+    # ── Feature 12: Adaptive difficulty update on user ──────────
+    _update_streak(session.user)
+
+
+def _update_streak(user):
+    """Feature 16: Update daily streak on session completion."""
+    try:
+        user.update_streak()
+    except Exception:
+        pass
 
 
 class StartSessionView(APIView):
@@ -158,6 +181,7 @@ class StartSessionView(APIView):
             "question_text": q.get("question_text", ""),
             "index": idx + 1,
             "total": len(questions),
+            "time_limit_seconds": q.get("time_limit_seconds", 120),
         })
 
 
@@ -192,11 +216,15 @@ class SubmitAnswerView(APIView):
             return Response({"completed": True})
 
         current = questions[idx]
-        question_text = current.get("question_text", "")
+        question_text     = current.get("question_text", "")
         expected_keywords = current.get("expected_keywords", [])
+        ideal_outline     = current.get("ideal_answer_outline", "")
 
         eval_data = evaluate_answer(question_text, answer_text, expected_keywords)
         sentiment = analyze_sentiment(answer_text)
+
+        # ── Feature 15: Voice analytics on text answer ──────────
+        voice_data = analyze_voice(answer_text)
 
         InterviewAnswer.objects.create(
             session=session,
@@ -209,20 +237,29 @@ class SubmitAnswerView(APIView):
             keywords_matched=eval_data.get("keywords_matched") or [],
             ai_feedback=eval_data.get("ai_feedback") or "",
             improvement_suggestions=eval_data.get("improvement_suggestions") or "",
+            voice_analytics=voice_data,
         )
 
         state["index"] = idx + 1
         if state["index"] >= len(questions):
             _finalize_session(session)
             SESSION_RUNTIME_STATE.pop(session.pk, None)
-            return Response({"completed": True})
+            return Response({
+                "completed": True,
+                "ideal_answer_outline": ideal_outline,
+                "expected_keywords": expected_keywords,
+            })
 
-        next_question = questions[state["index"]].get("question_text", "")
+        next_q = questions[state["index"]]
+        next_question = next_q.get("question_text", "")
         return Response({
             "completed": False,
             "next_question": next_question,
             "index": state["index"] + 1,
             "total": len(questions),
+            "time_limit_seconds": next_q.get("time_limit_seconds", 120),
+            "ideal_answer_outline": ideal_outline,
+            "expected_keywords": expected_keywords,
         })
 
 
@@ -247,24 +284,27 @@ class SubmitVoiceView(APIView):
         )
 
         transcribed = transcribe_audio(answer.audio_file.path)
-        eval_data = evaluate_answer(question_text, transcribed, expected_keywords)
-        sentiment = analyze_sentiment(transcribed)
+        eval_data   = evaluate_answer(question_text, transcribed, expected_keywords)
+        sentiment   = analyze_sentiment(transcribed)
+        voice_data  = analyze_voice(transcribed)  # Feature 15
 
-        answer.transcribed_text = transcribed
-        answer.answer_text = transcribed
-        answer.score = eval_data.get("score") or 0
-        answer.confidence_score = eval_data.get("confidence_score") or sentiment.get("confidence_score") or 0
-        answer.sentiment = sentiment.get("sentiment") or "neutral"
-        answer.sentiment_score = sentiment.get("score") or 0
-        answer.keywords_matched = eval_data.get("keywords_matched") or []
-        answer.ai_feedback = eval_data.get("ai_feedback") or ""
+        answer.transcribed_text      = transcribed
+        answer.answer_text           = transcribed
+        answer.score                 = eval_data.get("score") or 0
+        answer.confidence_score      = eval_data.get("confidence_score") or sentiment.get("confidence_score") or 0
+        answer.sentiment             = sentiment.get("sentiment") or "neutral"
+        answer.sentiment_score       = sentiment.get("score") or 0
+        answer.keywords_matched      = eval_data.get("keywords_matched") or []
+        answer.ai_feedback           = eval_data.get("ai_feedback") or ""
         answer.improvement_suggestions = eval_data.get("improvement_suggestions") or ""
+        answer.voice_analytics       = voice_data
         answer.save()
 
         return Response({
             "answer_id": answer.pk,
             "transcribed_text": transcribed,
             "score": answer.score,
+            "voice_analytics": voice_data,
         })
 
 
@@ -290,4 +330,123 @@ class FacialAnalysisView(APIView):
         return Response({
             "dominant_emotion": result.get("dominant_emotion", "neutral"),
             "emotions": answer.face_emotions,
+        })
+
+
+# ── Feature 7: Bookmark endpoints ───────────────────────────────────────────
+
+class BookmarkListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        bmarks = BookmarkedQuestion.objects.filter(user=request.user).order_by('-created_at')
+        data = [
+            {
+                'id': b.pk,
+                'question_text': b.question_text,
+                'session_id': b.session_id,
+                'note': b.note,
+                'created_at': b.created_at.isoformat(),
+            }
+            for b in bmarks
+        ]
+        return Response(data)
+
+
+class BookmarkCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, session_pk):
+        session = get_object_or_404(InterviewSession, pk=session_pk, user=request.user)
+        question_text = (request.data.get("question_text") or "").strip()
+        note          = (request.data.get("note") or "").strip()
+        if not question_text:
+            return Response({"detail": "question_text is required."}, status=400)
+
+        bmark, created = BookmarkedQuestion.objects.get_or_create(
+            user=request.user,
+            session=session,
+            question_text=question_text,
+            defaults={'note': note},
+        )
+        return Response({
+            "id": bmark.pk,
+            "created": created,
+            "question_text": bmark.question_text,
+        }, status=201 if created else 200)
+
+
+class BookmarkDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        bmark = get_object_or_404(BookmarkedQuestion, pk=pk, user=request.user)
+        bmark.delete()
+        return Response({"detail": "Bookmark removed."})
+
+
+# ── Feature 11: Smart topic recommendation ──────────────────────────────────
+
+class RecommendationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from django.db.models import Avg, Count
+        cat_qs = (
+            InterviewSession.objects
+            .filter(user=request.user, status='completed', overall_score__isnull=False)
+            .values('category')
+            .annotate(avg=Avg('overall_score'), count=Count('id'))
+            .order_by('avg')
+        )
+        if not cat_qs:
+            return Response({'recommendation': None, 'reason': 'Complete at least one session first.'})
+
+        worst = cat_qs[0]
+        return Response({
+            'recommendation': {
+                'category': worst['category'],
+                'avg_score': round(worst['avg'], 1),
+                'sessions': worst['count'],
+            },
+            'reason': f"Your weakest area is {worst['category']} with an average of {round(worst['avg'],1)}/10.",
+        })
+
+
+# ── Feature 12: Adaptive difficulty suggestion ──────────────────────────────
+
+class AdaptiveDifficultyView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        category = request.query_params.get('category', 'python')
+        from django.db.models import Avg
+        result = (
+            InterviewSession.objects
+            .filter(user=request.user, category=category, status='completed', overall_score__isnull=False)
+            .aggregate(avg=Avg('overall_score'))
+        )
+        avg = result.get('avg') or 0
+        if avg >= 7.5:
+            suggested = 'hard'
+            reason = f'Your avg for {category} is {round(avg,1)}/10 — time to level up!'
+        elif avg < 5:
+            suggested = 'easy'
+            reason = f'Your avg for {category} is {round(avg,1)}/10 — build the fundamentals first.'
+        else:
+            suggested = 'medium'
+            reason = f'Your avg for {category} is {round(avg,1)}/10 — keep sharpening at medium.'
+        return Response({'category': category, 'suggested_difficulty': suggested, 'avg_score': round(avg, 1), 'reason': reason})
+
+
+# ── Feature 16: Streak info ──────────────────────────────────────────────────
+
+class StreakView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            'daily_streak': getattr(user, 'daily_streak', 0),
+            'last_active': str(getattr(user, 'last_active', None)),
         })

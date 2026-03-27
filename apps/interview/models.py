@@ -35,11 +35,16 @@ class InterviewSession(models.Model):
         ('completed', 'Completed'),
         ('abandoned', 'Abandoned'),
     ]
+    SESSION_TYPE_CHOICES = [
+        ('standard', 'Standard'),
+        ('mock',     'Mock Interview'),
+    ]
 
     user             = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sessions')
     title            = models.CharField(max_length=200, blank=True)
     category         = models.CharField(max_length=30, default='python')
     difficulty       = models.CharField(max_length=10, default='medium')
+    session_type     = models.CharField(max_length=20, choices=SESSION_TYPE_CHOICES, default='standard')
     status           = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     total_questions  = models.IntegerField(default=5)
     overall_score    = models.FloatField(null=True, blank=True)
@@ -48,6 +53,7 @@ class InterviewSession(models.Model):
     feedback_summary = models.TextField(blank=True)
     improvement_tips = models.JSONField(default=list)
     strengths        = models.JSONField(default=list)
+    recommended_topics = models.JSONField(default=list)   # Feature 11
     readiness        = models.CharField(max_length=30, blank=True)
     started_at       = models.DateTimeField(null=True, blank=True)
     ended_at         = models.DateTimeField(null=True, blank=True)
@@ -88,6 +94,7 @@ class InterviewAnswer(models.Model):
     ai_feedback           = models.TextField(blank=True)
     improvement_suggestions = models.TextField(blank=True)
     face_emotions         = models.JSONField(default=dict)
+    voice_analytics       = models.JSONField(default=dict)   # Feature 15: wpm, filler_count, filler_words
     time_taken_seconds    = models.IntegerField(default=0)
     answered_at           = models.DateTimeField(auto_now_add=True)
 
@@ -105,3 +112,18 @@ class FacialSnapshot(models.Model):
     dominant_emotion = models.CharField(max_length=30, blank=True)
     emotions_data    = models.JSONField(default=dict)
     captured_at      = models.DateTimeField(auto_now_add=True)
+
+
+class BookmarkedQuestion(models.Model):
+    """Feature 7: Bookmark questions for focused re-practice."""
+    user          = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookmarks')
+    session       = models.ForeignKey(InterviewSession, on_delete=models.CASCADE, related_name='bookmarks')
+    question_text = models.TextField()
+    note          = models.TextField(blank=True)
+    created_at    = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'session', 'question_text')
+
+    def __str__(self):
+        return f'{self.user.email} | {self.question_text[:60]}'
