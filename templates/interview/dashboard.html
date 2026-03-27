@@ -53,6 +53,38 @@
     </article>
   </section>
 
+  <!-- Feature 6: Streak + Recommendation cards -->
+  {% if streak or recommendation %}
+  <section class="dash-feature-strip reveal">
+
+    {% if streak %}
+    <div class="feature-strip-card streak-card">
+      <div class="fsc-icon">🔥</div>
+      <div class="fsc-body">
+        <span class="fsc-value">{{ streak }}</span>
+        <span class="fsc-label">day streak</span>
+      </div>
+      <p class="fsc-sub">Keep practising daily to grow it!</p>
+    </div>
+    {% endif %}
+
+    {% if recommendation %}
+    <div class="feature-strip-card rec-card">
+      <div class="fsc-icon">🎯</div>
+      <div class="fsc-body">
+        <span class="fsc-value">{{ recommendation.category|title }}</span>
+        <span class="fsc-label">needs work · avg {{ recommendation.avg }}/10</span>
+      </div>
+      <a class="fsc-action"
+         href="{% url 'new_interview' %}?category={{ recommendation.category }}">
+        Practice now →
+      </a>
+    </div>
+    {% endif %}
+
+  </section>
+  {% endif %}
+
   <!-- Score insight -->
   <section class="card dash-insight reveal" data-score="{{ stats.avg_score|default:0|floatformat:1 }}">
     <div class="score-ring" id="score-ring">

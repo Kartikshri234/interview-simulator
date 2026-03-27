@@ -1562,6 +1562,138 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; 
   animation: timer-pulse 0.8s ease-in-out infinite;
 }
 
+/* ══ Feature 6: Streak & Recommendation strip ══ */
+.dash-feature-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.feature-strip-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.feature-strip-card:hover { border-color: var(--primary); box-shadow: var(--shadow-md); }
+.streak-card { border-top: 3px solid var(--warning); }
+.rec-card    { border-top: 3px solid var(--primary); }
+.fsc-icon { font-size: 1.6rem; line-height: 1; }
+.fsc-body {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.fsc-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.03em;
+}
+.fsc-label {
+  font-size: 0.78rem;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.fsc-sub {
+  font-size: 0.8rem;
+  color: var(--text-2);
+  margin: 0;
+}
+.fsc-action {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+  border: 1px solid rgba(79,70,229,0.2);
+  border-radius: 7px;
+  padding: 5px 13px;
+  background: var(--primary-dim);
+  transition: background 0.15s, transform 0.15s;
+  align-self: flex-start;
+}
+.fsc-action:hover { background: rgba(79,70,229,0.14); transform: translateY(-1px); }
+
+/* ══ Feature 8: Adaptive difficulty hint ══ */
+.adaptive-hint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 11px 14px;
+  border: 1px solid rgba(79,70,229,0.22);
+  border-radius: var(--radius);
+  background: var(--primary-dim);
+  font-size: 0.82rem;
+  color: var(--text-2);
+  margin-bottom: 4px;
+}
+.adaptive-hint svg {
+  width: 16px; height: 16px;
+  stroke: var(--primary);
+  flex-shrink: 0;
+}
+.adaptive-hint span { flex: 1; }
+.adaptive-apply-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font: 600 0.75rem 'Inter', sans-serif;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: none;
+  transform: none;
+  transition: background 0.15s;
+}
+.adaptive-apply-btn:hover { background: var(--primary-hover); }
+.adaptive-apply-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* ══ Feature 6: Bookmark page chips ══ */
+.bm-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.bm-cat-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 2px 8px;
+  border-radius: 5px;
+  background: var(--primary-dim);
+  color: var(--primary);
+  border: 1px solid rgba(79,70,229,0.18);
+}
+.bm-diff-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.bm-diff-easy   { background: var(--success-dim); color: var(--success); }
+.bm-diff-medium { background: var(--warning-dim); color: var(--warning); }
+.bm-diff-hard   { background: var(--danger-dim);  color: var(--danger);  }
+
 /* ── Compact mode ── */
 body.compact-mode .card { border-radius: 10px; }
 body.compact-mode .page-shell { margin-top: 24px; }

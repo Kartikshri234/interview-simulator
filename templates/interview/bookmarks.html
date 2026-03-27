@@ -16,14 +16,35 @@
 
 <section class="card section-pad reveal">
   {% if bookmarks %}
-    <div class="answers-list">
+
+    <!-- Feature 6: Bookmark search + stats -->
+    <div class="bm-toolbar">
+      <div class="history-search-input-wrap" style="max-width:340px;">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M13 13l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input type="text" id="bm-search" placeholder="Search bookmarks…" autocomplete="off">
+        <button class="history-search-clear" id="bm-search-clear" hidden>✕</button>
+      </div>
+      <span class="history-result-count" id="bm-count">{{ bookmarks|length }} saved</span>
+    </div>
+
+    <div class="answers-list" id="bm-list">
       {% for bm in bookmarks %}
-        <article class="card answer-card" id="bm-{{ bm.pk }}">
+        <article class="card answer-card bm-card" id="bm-{{ bm.pk }}"
+                 data-text="{{ bm.question_text|lower }}"
+                 data-category="{{ bm.session.category }}">
+
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
-            <h4 style="flex:1;">{{ bm.question_text }}</h4>
-            <div style="display:flex;gap:8px;">
+            <div style="flex:1;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                <span class="bm-cat-chip">{{ bm.session.category|title }}</span>
+                <span class="bm-diff-chip bm-diff-{{ bm.session.difficulty }}">{{ bm.session.difficulty }}</span>
+              </div>
+              <h4 style="margin:0;">{{ bm.question_text }}</h4>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+              <!-- Feature 6: Retry = new session pre-seeded with this category -->
               <a class="button" style="font-size:12px;padding:6px 14px;"
-                 href="{% url 'interview_room' bm.session.id %}">
+                 href="{% url 'new_interview' %}?category={{ bm.session.category }}&difficulty={{ bm.session.difficulty }}">
                 Retry →
               </a>
               <button class="button alt remove-bookmark-btn" style="font-size:12px;padding:6px 14px;"
@@ -32,15 +53,19 @@
               </button>
             </div>
           </div>
+
           {% if bm.note %}
             <p style="margin-top:8px;color:var(--text-2);">📝 {{ bm.note }}</p>
           {% endif %}
-          <p class="muted" style="font-size:11px;margin-top:6px;">
-            Session #{{ bm.session.id }} · {{ bm.created_at|date:'M d, Y' }}
+          <p class="muted" style="font-size:11px;margin-top:8px;">
+            Saved {{ bm.created_at|date:'M d, Y' }} ·
+            <a href="{% url 'results' bm.session.id %}" style="color:var(--primary);">View original session</a>
           </p>
         </article>
       {% endfor %}
     </div>
+    <p class="recent-filter-empty" id="bm-empty-search" hidden>No bookmarks match your search.</p>
+
   {% else %}
     <div class="empty">
       <p>You haven't bookmarked any questions yet.</p>
@@ -55,18 +80,66 @@
 {% block extra_js %}
 <script>
 (function () {
+
+  /* ── Remove bookmarks ── */
   document.querySelectorAll('.remove-bookmark-btn').forEach(function(btn) {
     btn.addEventListener('click', async function() {
       const id     = btn.dataset.id;
       const target = document.getElementById(btn.dataset.target);
+      btn.textContent = 'Removing...';
+      btn.disabled = true;
       try {
         const res = await window.Auth.apiCall('/api/interview/bookmarks/' + id + '/delete/', { method: 'DELETE' });
-        if (res.ok && target) target.remove();
+        if (res.ok && target) {
+          target.style.opacity = '0';
+          target.style.transform = 'translateY(-6px)';
+          target.style.transition = 'opacity 0.2s, transform 0.2s';
+          setTimeout(function() { target.remove(); updateCount(); }, 200);
+        }
       } catch (e) {
-        alert('Could not remove bookmark.');
+        btn.textContent = 'Error';
+        btn.disabled = false;
       }
     });
   });
+
+  /* ── Live search ── */
+  var searchInput  = document.getElementById('bm-search');
+  var clearBtn     = document.getElementById('bm-search-clear');
+  var emptySearch  = document.getElementById('bm-empty-search');
+  var countLabel   = document.getElementById('bm-count');
+
+  function updateCount() {
+    var cards   = document.querySelectorAll('.bm-card:not([hidden])');
+    var total   = document.querySelectorAll('.bm-card').length;
+    if (countLabel) countLabel.textContent = cards.length + ' of ' + total + ' saved';
+  }
+
+  function applySearch() {
+    var q = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    var cards   = document.querySelectorAll('.bm-card');
+    var visible = 0;
+    cards.forEach(function(card) {
+      var text = (card.dataset.text || '') + ' ' + (card.dataset.category || '');
+      var show = !q || text.includes(q);
+      card.hidden = !show;
+      if (show) visible++;
+    });
+    if (emptySearch) emptySearch.hidden = visible !== 0;
+    if (clearBtn) clearBtn.hidden = !q;
+    updateCount();
+  }
+
+  if (searchInput) searchInput.addEventListener('input', applySearch);
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      if (searchInput) searchInput.value = '';
+      applySearch();
+    });
+  }
+
+  updateCount();
+
 })();
 </script>
 {% endblock %}
