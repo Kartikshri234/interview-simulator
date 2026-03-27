@@ -7,12 +7,13 @@
   <title>{% block title %}AI Interview Simulator{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,600&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   {% block extra_head %}{% endblock %}
 </head>
 <body>
 
+  <!-- ── Top navigation ── -->
   <header class="topbar">
     <a href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}" class="brand">
       <span class="brand-dot"></span>
@@ -34,10 +35,157 @@
         <a href="{% url 'login' %}">Sign in</a>
         <a href="{% url 'register' %}" class="btn-link">Get started</a>
       {% endif %}
-      <button class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark theme">🌙</button>
+
+      <!-- Settings logo button -->
+      <button class="settings-btn" id="settings-open-btn" title="Settings" aria-label="Open settings">
+        <span class="settings-btn-inner">
+          <svg class="settings-btn-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Sliders logo -->
+            <line x1="4" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="4" y1="15" x2="16" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="7" cy="5" r="2" fill="currentColor" stroke="none"/>
+            <circle cx="13" cy="10" r="2" fill="currentColor" stroke="none"/>
+            <circle cx="8" cy="15" r="2" fill="currentColor" stroke="none"/>
+          </svg>
+        </span>
+      </button>
     </nav>
   </header>
 
+  <!-- ── Settings overlay ── -->
+  <div class="settings-overlay" id="settings-overlay"></div>
+
+  <!-- ── Settings panel ── -->
+  <aside class="settings-panel" id="settings-panel" role="dialog" aria-label="Settings">
+    <div class="settings-header">
+      <div class="settings-header-logo">
+        <div class="settings-logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </div>
+        <div>
+          <h2>Settings</h2>
+          <p class="settings-header-sub">Customize your experience</p>
+        </div>
+      </div>
+      <button class="settings-close" id="settings-close-btn" aria-label="Close settings">✕</button>
+    </div>
+
+    <div class="settings-body">
+
+      <!-- Theme -->
+      <div class="settings-section">
+        <div class="settings-section-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8"/><path d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 12 21a9.003 9.003 0 0 0 8.354-5.646z"/></svg>
+          <h3>Appearance</h3>
+        </div>
+        <p class="settings-section-desc">Choose a colour theme for the entire app. Your preference is saved automatically.</p>
+        <div class="theme-swatches">
+
+          <div class="theme-swatch">
+            <input type="radio" name="theme" id="theme-light" value="light">
+            <label for="theme-light">
+              <div class="swatch-preview swatch-light">
+                <span class="sp-bg"></span>
+                <span class="sp-nav"></span>
+                <span class="sp-acc"></span>
+              </div>
+              Light
+            </label>
+          </div>
+
+          <div class="theme-swatch">
+            <input type="radio" name="theme" id="theme-dark" value="dark">
+            <label for="theme-dark">
+              <div class="swatch-preview swatch-dark">
+                <span class="sp-bg"></span>
+                <span class="sp-nav"></span>
+                <span class="sp-acc"></span>
+              </div>
+              Dark
+            </label>
+          </div>
+
+          <div class="theme-swatch">
+            <input type="radio" name="theme" id="theme-blue" value="blue">
+            <label for="theme-blue">
+              <div class="swatch-preview swatch-blue">
+                <span class="sp-bg"></span>
+                <span class="sp-nav"></span>
+                <span class="sp-acc"></span>
+              </div>
+              Ocean Blue
+            </label>
+          </div>
+
+          <div class="theme-swatch">
+            <input type="radio" name="theme" id="theme-rose" value="rose">
+            <label for="theme-rose">
+              <div class="swatch-preview swatch-rose">
+                <span class="sp-bg"></span>
+                <span class="sp-nav"></span>
+                <span class="sp-acc"></span>
+              </div>
+              Rose
+            </label>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Font size -->
+      <div class="settings-section">
+        <div class="settings-section-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+          <h3>Font Size</h3>
+        </div>
+        <p class="settings-section-desc">Adjust the text size across the app. Ranges from 13px (small) to 19px (large).</p>
+        <div class="font-size-row">
+          <button id="font-decrease" aria-label="Decrease font size">−</button>
+          <span class="font-size-label" id="font-size-label">15px</span>
+          <button id="font-increase" aria-label="Increase font size">+</button>
+        </div>
+      </div>
+
+      <!-- Preferences -->
+      <div class="settings-section">
+        <div class="settings-section-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          <h3>Preferences</h3>
+        </div>
+        <p class="settings-section-desc">Fine-tune the layout and visual behaviour of the interface.</p>
+
+        <div class="toggle-row">
+          <div class="toggle-label">
+            <span>Compact mode</span>
+            <small>Tighter padding — fits more content on screen</small>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="pref-compact">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <div class="toggle-label">
+            <span>Animations</span>
+            <small>Smooth reveal &amp; transition effects on page load</small>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="pref-animations" checked>
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+
+      </div>
+
+    </div><!-- /settings-body -->
+  </aside>
+
+  <!-- ── Main content ── -->
   <main class="page-shell">
     {% if messages %}
       <section class="flash-stack">
@@ -50,6 +198,108 @@
   </main>
 
   <script src="{% static 'js/common.js' %}"></script>
+
+  <!-- Settings panel JS -->
+  <script>
+  (function () {
+    /* ── helpers ── */
+    function get(k, def) {
+      try { return localStorage.getItem(k) ?? def; } catch { return def; }
+    }
+    function set(k, v) {
+      try { localStorage.setItem(k, v); } catch {}
+    }
+
+    /* ── Theme ── */
+    const html = document.documentElement;
+    let currentTheme = get('ui-theme', 'light');
+
+    function applyTheme(t) {
+      currentTheme = t;
+      html.setAttribute('data-theme', t);
+      set('ui-theme', t);
+      const radio = document.getElementById('theme-' + t);
+      if (radio) radio.checked = true;
+    }
+
+    applyTheme(currentTheme);
+
+    document.querySelectorAll('input[name="theme"]').forEach(function (r) {
+      r.addEventListener('change', function () { applyTheme(this.value); });
+    });
+
+    /* ── Font size ── */
+    const FONT_MIN = 13, FONT_MAX = 19;
+    let fontSize = parseInt(get('ui-font-size', '15'), 10);
+
+    function applyFontSize(s) {
+      fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, s));
+      document.body.style.fontSize = fontSize + 'px';
+      set('ui-font-size', fontSize);
+      const lbl = document.getElementById('font-size-label');
+      if (lbl) lbl.textContent = fontSize + 'px';
+    }
+
+    applyFontSize(fontSize);
+
+    document.getElementById('font-decrease').addEventListener('click', function () { applyFontSize(fontSize - 1); });
+    document.getElementById('font-increase').addEventListener('click', function () { applyFontSize(fontSize + 1); });
+
+    /* ── Compact mode ── */
+    const compactCheck = document.getElementById('pref-compact');
+    let isCompact = get('ui-compact', 'false') === 'true';
+
+    function applyCompact(v) {
+      isCompact = v;
+      document.body.classList.toggle('compact-mode', v);
+      set('ui-compact', v);
+      compactCheck.checked = v;
+    }
+    applyCompact(isCompact);
+    compactCheck.addEventListener('change', function () { applyCompact(this.checked); });
+
+    /* ── Animations toggle ── */
+    const animCheck = document.getElementById('pref-animations');
+    let animOn = get('ui-animations', 'true') === 'true';
+
+    function applyAnimations(v) {
+      animOn = v;
+      set('ui-animations', v);
+      animCheck.checked = v;
+      if (!v) {
+        document.querySelectorAll('.reveal').forEach(function (el) {
+          el.classList.add('is-visible');
+        });
+      }
+    }
+    applyAnimations(animOn);
+    animCheck.addEventListener('change', function () { applyAnimations(this.checked); });
+
+    /* ── Panel open/close ── */
+    const panel   = document.getElementById('settings-panel');
+    const overlay = document.getElementById('settings-overlay');
+
+    function openPanel() {
+      panel.classList.add('open');
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closePanel() {
+      panel.classList.remove('open');
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('settings-open-btn').addEventListener('click', openPanel);
+    document.getElementById('settings-close-btn').addEventListener('click', closePanel);
+    overlay.addEventListener('click', closePanel);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') closePanel();
+    });
+
+  })();
+  </script>
+
   {% block extra_js %}{% endblock %}
 </body>
 </html>

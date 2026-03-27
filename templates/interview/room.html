@@ -15,15 +15,67 @@
     <span class="mono">{{ session.total_questions }} questions</span>
   </p>
   <div id="room-status">Ready to start.</div>
+    <!-- Feature 2: ideal answer toggle (shown after each answer) -->
+    <button class="ideal-toggle-btn" id="ideal-toggle-btn" hidden>
+      <svg viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 1 1 0 16A8 8 0 0 1 10 2zm0 4v4l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      View ideal answer
+    </button>
 </section>
+
+<!-- ── Feature 1: Countdown Timer Bar ── -->
+<div class="timer-bar-wrap" id="timer-bar-wrap" hidden>
+  <div class="timer-bar-inner">
+    <div class="timer-ring-wrap">
+      <svg class="timer-ring" viewBox="0 0 44 44">
+        <circle class="timer-ring-track" cx="22" cy="22" r="18"/>
+        <circle class="timer-ring-fill" id="timer-ring-fill" cx="22" cy="22" r="18"
+                stroke-dasharray="113" stroke-dashoffset="0"/>
+      </svg>
+      <span class="timer-ring-label" id="timer-display">--</span>
+    </div>
+    <div class="timer-bar-info">
+      <span class="timer-bar-title" id="timer-bar-title">Time remaining</span>
+      <div class="timer-progress-track">
+        <div class="timer-progress-fill" id="timer-progress-fill"></div>
+      </div>
+    </div>
+    <span class="timer-status-badge" id="timer-status-badge">On track</span>
+  </div>
+</div>
 
 <div class="grid two">
 
   <article class="card section-pad reveal">
-    <h3>Current question</h3>
+    <div class="question-header">
+      <h3>Current question</h3>
+      <!-- Feature 5: Text-to-Speech button -->
+      <button class="tts-btn" id="tts-btn" hidden title="Read question aloud" aria-label="Read question aloud">
+        <svg id="tts-icon-speak" viewBox="0 0 20 20" fill="none">
+          <path d="M9 5L5 8H2v4h3l4 3V5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M13 7a4 4 0 0 1 0 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M15.5 4.5a8 8 0 0 1 0 11" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <svg id="tts-icon-stop" viewBox="0 0 20 20" fill="none" hidden>
+          <rect x="5" y="5" width="10" height="10" rx="2" stroke="currentColor" stroke-width="1.6"/>
+        </svg>
+        <span id="tts-btn-label">Read aloud</span>
+      </button>
+    </div>
     <div class="room-question" id="question-text">
       Click <strong>Start session</strong> to fetch your first question.
     </div>
+
+    <!-- Feature 2: Ideal Answer Panel (hidden until answer submitted) -->
+    <div class="ideal-panel" id="ideal-panel" hidden>
+      <div class="ideal-panel-head">
+        <svg viewBox="0 0 20 20" fill="none"><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/></svg>
+        <span>Ideal answer outline</span>
+        <button class="ideal-panel-close" id="ideal-panel-close" aria-label="Close">&#x2715;</button>
+      </div>
+      <div class="ideal-panel-body" id="ideal-panel-body"></div>
+      <div class="ideal-keywords" id="ideal-keywords"></div>
+    </div>
+
     <form id="answer-form">
       {% csrf_token %}
       <label>

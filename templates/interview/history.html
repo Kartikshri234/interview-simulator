@@ -23,9 +23,51 @@
       </div>
     </div>
 
+    <!-- Feature 3: Search & Filter Bar -->
+    <div class="history-search-bar">
+      <div class="history-search-input-wrap">
+        <svg viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M13 13l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <input type="text" id="history-search" placeholder="Search by title or category…" autocomplete="off">
+        <button class="history-search-clear" id="history-search-clear" hidden aria-label="Clear search">✕</button>
+      </div>
+      <div class="history-filter-selects">
+        <select id="history-cat-filter" class="history-select">
+          <option value="">All categories</option>
+          <option value="python">Python</option>
+          <option value="django">Django</option>
+          <option value="dsa">DSA</option>
+          <option value="system_design">System Design</option>
+          <option value="behavioral">Behavioral</option>
+          <option value="javascript">JavaScript</option>
+          <option value="database">Database / SQL</option>
+          <option value="devops">DevOps</option>
+          <option value="ml">Machine Learning</option>
+        </select>
+        <select id="history-diff-filter" class="history-select">
+          <option value="">All difficulties</option>
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+        <select id="history-score-filter" class="history-select">
+          <option value="">Any score</option>
+          <option value="high">≥ 7 / 10</option>
+          <option value="mid">5 – 6.9 / 10</option>
+          <option value="low">&lt; 5 / 10</option>
+          <option value="none">Not scored</option>
+        </select>
+      </div>
+      <span class="history-result-count" id="history-result-count"></span>
+    </div>
+
     <div class="recent-stack" id="history-stack">
       {% for s in sessions %}
-        <article class="recent-item" data-status="{{ s.status }}">
+        <article class="recent-item"
+          data-status="{{ s.status }}"
+          data-category="{{ s.category }}"
+          data-difficulty="{{ s.difficulty }}"
+          data-score="{{ s.overall_score|default:'' }}"
+          data-title="{{ s.title|default:''|lower }}">
           <div class="recent-main">
             <h4>{{ s.title|default:'Untitled Session' }}</h4>
             <p>

@@ -8,16 +8,59 @@ from rest_framework import serializers
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth import authenticate
 from .models import CustomUser
 
 
 # ── Throttle classes ──────────────────────────────────────────
 
 class RegisterThrottle(AnonRateThrottle):
-    """Limit registration attempts — 5 per minute per IP."""
-    scope = 'token_obtain'   # reuses the same 5/min bucket
+    scope = 'token_obtain'
+
+
+# ── Username-or-email JWT serializer ─────────────────────────
+
+class FlexTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Overrides the default JWT login to accept either a username OR
+    an email address in the 'email' field (or a new 'identifier' field).
+    """
+    # Add an 'identifier' field; keep 'email' as well for backwards compat
+    identifier = serializers.CharField(required=False, default='')
+
+    def validate(self, attrs):
+        # Support both 'identifier' (new) and 'email' (legacy) field names
+        identifier = (attrs.get('identifier') or attrs.get('email', '')).strip()
+        password   = attrs.get('password', '')
+
+        if not identifier or not password:
+            raise serializers.ValidationError('Identifier and password are required.')
+
+        # Resolve identifier → email (our USERNAME_FIELD)
+        if '@' in identifier:
+            try:
+                user_obj = CustomUser.objects.get(email__iexact=identifier)
+                resolved_email = user_obj.email
+            except CustomUser.DoesNotExist:
+                raise serializers.ValidationError('No account found with that email.')
+        else:
+            try:
+                user_obj = CustomUser.objects.get(username__iexact=identifier)
+                resolved_email = user_obj.email
+            except CustomUser.DoesNotExist:
+                raise serializers.ValidationError('No account found with that username.')
+
+        # Now authenticate with the resolved email
+        attrs[self.username_field] = resolved_email
+        return super().validate(attrs)
+
+
+class FlexTokenObtainPairView(TokenObtainPairView):
+    serializer_class = FlexTokenObtainPairSerializer
 
 
 # ── Serializers ───────────────────────────────────────────────
@@ -67,10 +110,6 @@ class ChangePasswordSerializer(serializers.Serializer):
 # ── API Views ─────────────────────────────────────────────────
 
 class RegisterAPIView(generics.CreateAPIView):
-    """
-    POST /api/users/register/
-    Public endpoint. Rate-limited to 5/min per IP.
-    """
     queryset           = CustomUser.objects.all()
     serializer_class   = RegisterSerializer
     permission_classes = [permissions.AllowAny]
@@ -78,10 +117,6 @@ class RegisterAPIView(generics.CreateAPIView):
 
 
 class ProfileAPIView(generics.RetrieveUpdateAPIView):
-    """
-    GET/PATCH /api/users/profile/
-    Returns and updates the authenticated user's profile.
-    """
     serializer_class   = ProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -90,83 +125,37 @@ class ProfileAPIView(generics.RetrieveUpdateAPIView):
 
 
 class LogoutAPIView(APIView):
-    """
-    POST /api/auth/logout/
-    Blacklists the supplied refresh token so it can never be used again.
-    The client should discard both the access and refresh tokens locally.
-
-    Body: { "refresh": "<refresh_token>" }
-    """
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         refresh_token = request.data.get('refresh')
         if not refresh_token:
-            return Response(
-                {'detail': 'Refresh token is required.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({'detail': 'Refresh token is required.'}, status=status.HTTP_400_BAD_REQUEST)
         try:
             token = RefreshToken(refresh_token)
             token.blacklist()
         except TokenError as e:
-            return Response(
-                {'detail': str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_200_OK)
 
 
 class ChangePasswordAPIView(APIView):
-    """
-    POST /api/users/change-password/
-    Authenticated users can change their password.
-    On success, ALL existing refresh tokens for this user become invalid
-    because we rotate the password hash (simplejwt validates against it).
-
-    Body: {
-        "current_password": "...",
-        "new_password":     "...",
-        "new_password2":    "..."
-    }
-    """
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         serializer = ChangePasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-
         user = request.user
-
-        # Verify the current password
         if not check_password(serializer.validated_data['current_password'], user.password):
-            return Response(
-                {'detail': 'Current password is incorrect.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Prevent reusing the same password
+            return Response({'detail': 'Current password is incorrect.'}, status=status.HTTP_400_BAD_REQUEST)
         if check_password(serializer.validated_data['new_password'], user.password):
-            return Response(
-                {'detail': 'New password must be different from the current password.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Set and save the new password
+            return Response({'detail': 'New password must be different from the current password.'}, status=status.HTTP_400_BAD_REQUEST)
         user.set_password(serializer.validated_data['new_password'])
         user.save(update_fields=['password'])
-
-        return Response(
-            {'detail': 'Password changed successfully. Please log in again.'},
-            status=status.HTTP_200_OK,
-        )
+        return Response({'detail': 'Password changed successfully. Please log in again.'}, status=status.HTTP_200_OK)
 
 
 class UserStatsAPIView(APIView):
-    """
-    GET /api/users/stats/
-    Returns aggregate interview statistics for the authenticated user.
-    """
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):

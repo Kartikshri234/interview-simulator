@@ -1,4 +1,5 @@
 # HTML page views — Django templates
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Avg, Count, Q
@@ -15,7 +16,39 @@ def dashboard(request):
     )
     stats['avg_score'] = round(stats['avg_score'] or 0, 1)
     recent = sessions[:6]
-    return render(request, 'interview/dashboard.html', {'stats': stats, 'recent': recent})
+
+    # ── Feature 4: Progress Charts ──────────────────────────────
+    # Score trend: last 10 completed sessions (oldest first for chart)
+    trend_qs = (
+        sessions
+        .filter(status='completed', overall_score__isnull=False)
+        .order_by('created_at')[:10]
+    )
+    trend_labels  = [s.created_at.strftime('%-d %b') for s in trend_qs]
+    trend_scores  = [round(s.overall_score, 1) for s in trend_qs]
+
+    # Average score per category (completed only)
+    cat_qs = (
+        sessions
+        .filter(status='completed', overall_score__isnull=False)
+        .values('category')
+        .annotate(avg=Avg('overall_score'), count=Count('id'))
+        .order_by('-avg')
+    )
+    cat_labels = [c['category'].replace('_', ' ').title() for c in cat_qs]
+    cat_scores = [round(c['avg'], 1) for c in cat_qs]
+    cat_counts = [c['count'] for c in cat_qs]
+
+    chart_data = json.dumps({
+        'trend':  {'labels': trend_labels,  'scores': trend_scores},
+        'topics': {'labels': cat_labels, 'scores': cat_scores, 'counts': cat_counts},
+    })
+    # ────────────────────────────────────────────────────────────
+
+    return render(request, 'interview/dashboard.html', {
+        'stats': stats, 'recent': recent,
+        'chart_data': chart_data,
+    })
 
 
 @login_required

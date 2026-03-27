@@ -10,7 +10,7 @@
     </div>
 
     <h1>Welcome back</h1>
-    <p class="subtitle">Sign in to continue your interview practice and track your progress.</p>
+    <p class="subtitle">Sign in with your username or email address to continue.</p>
 
     <div id="login-banner" class="auth-banner" style="display:none;"></div>
 
@@ -23,14 +23,25 @@
     <form method="post" action="{% url 'login' %}" id="login-form">
       {% csrf_token %}
       <label>
-        Email address
-        <input type="email" name="email" id="login-email"
-               required autocomplete="email" placeholder="you@example.com">
+        Username or email
+        <input type="text"
+               name="identifier"
+               id="login-identifier"
+               required
+               autocomplete="username"
+               placeholder="yourname or you@example.com"
+               autocapitalize="off"
+               autocorrect="off"
+               spellcheck="false">
       </label>
       <label>
         Password
-        <input type="password" name="password" id="login-password"
-               required autocomplete="current-password" placeholder="••••••••">
+        <input type="password"
+               name="password"
+               id="login-password"
+               required
+               autocomplete="current-password"
+               placeholder="••••••••">
       </label>
       <p id="login-error" class="auth-inline-error auth-inline-error-space"></p>
       <button type="submit" id="login-btn" class="auth-submit-btn">
@@ -48,6 +59,7 @@
 {% block extra_js %}
 <script>
 (function () {
+    // Show session-expired banner
     const params = new URLSearchParams(window.location.search);
     if (params.get('reason') === 'expired') {
         const banner = document.getElementById('login-banner');
@@ -55,33 +67,40 @@
         banner.style.display = 'block';
     }
 
-    const form       = document.getElementById('login-form');
-    const emailEl    = document.getElementById('login-email');
-    const passwordEl = document.getElementById('login-password');
-    const errorEl    = document.getElementById('login-error');
-    const btn        = document.getElementById('login-btn');
+    const form           = document.getElementById('login-form');
+    const identifierEl   = document.getElementById('login-identifier');
+    const passwordEl     = document.getElementById('login-password');
+    const errorEl        = document.getElementById('login-error');
+    const btn            = document.getElementById('login-btn');
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        const email    = emailEl.value.trim();
-        const password = passwordEl.value;
-        if (!email || !password) {
-            errorEl.textContent = 'Please enter your email and password.';
+        const identifier = identifierEl.value.trim();
+        const password   = passwordEl.value;
+
+        if (!identifier || !password) {
+            errorEl.textContent = 'Please enter your username/email and password.';
             return;
         }
+
         btn.disabled    = true;
         btn.textContent = 'Signing in…';
         errorEl.textContent = '';
+
+        // Call the JWT token endpoint — always send as 'email' field
+        // (our backend resolver handles both username and email inputs)
         if (window.Auth) {
             try {
-                await window.Auth.login(email, password);
+                await window.Auth.login(identifier, password);
             } catch (err) {
-                errorEl.textContent = err.message || 'Invalid email or password.';
+                errorEl.textContent = err.message || 'Invalid username/email or password.';
                 btn.disabled    = false;
                 btn.textContent = 'Sign in →';
                 return;
             }
         }
+
+        // Submit the Django session form using the identifier field
         form.submit();
     });
 })();

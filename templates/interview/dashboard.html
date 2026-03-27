@@ -61,6 +61,35 @@
     </div>
   </section>
 
+  <!-- Feature 4: Progress Charts by Topic -->
+  <section class="card section-pad reveal" id="dash-charts" data-chart='{{ chart_data|escapejs }}'>
+    <div class="dash-charts-head">
+      <h3>Performance trends</h3>
+      <div class="dash-charts-tabs">
+        <button class="chart-tab is-active" data-chart-tab="trend">Score over time</button>
+        <button class="chart-tab" data-chart-tab="topics">By topic</button>
+      </div>
+    </div>
+
+    <div class="chart-panel" id="chart-panel-trend">
+      <div class="chart-empty" id="chart-trend-empty" hidden>
+        <p>Complete at least one session to see your score trend.</p>
+      </div>
+      <div class="chart-wrap" id="chart-trend-wrap">
+        <canvas id="chart-trend" height="200"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-panel" id="chart-panel-topics" hidden>
+      <div class="chart-empty" id="chart-topics-empty" hidden>
+        <p>Complete sessions across different topics to see your category breakdown.</p>
+      </div>
+      <div class="chart-wrap" id="chart-topics-wrap">
+        <canvas id="chart-topics" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
   <!-- Recent sessions -->
   <section class="card dash-recent reveal">
     <div class="dash-recent-head">

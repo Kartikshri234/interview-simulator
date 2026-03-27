@@ -7,38 +7,52 @@ from django.db.models import Avg, Count, Q
 from .models import CustomUser
 
 
+def _authenticate_by_username_or_email(request, identifier, password):
+    """
+    Try to authenticate using either a username or an email address.
+    Returns a user object on success, None on failure.
+    """
+    # Decide if the identifier looks like an email (contains '@')
+    if '@' in identifier:
+        # Look up by email first, then authenticate with the found username
+        try:
+            user_obj = CustomUser.objects.get(email__iexact=identifier)
+            return authenticate(request, username=user_obj.email, password=password)
+        except CustomUser.DoesNotExist:
+            return None
+    else:
+        # Look up by username, then authenticate via the email (USERNAME_FIELD)
+        try:
+            user_obj = CustomUser.objects.get(username__iexact=identifier)
+            return authenticate(request, username=user_obj.email, password=password)
+        except CustomUser.DoesNotExist:
+            return None
+
+
 def login_view(request):
     """
     Handles both GET (show form) and POST (authenticate).
-
-    On POST we authenticate the user and establish a Django SESSION
-    (via login()) so that @login_required template views keep working.
-    The JWT tokens are issued separately by the frontend calling
-    /api/auth/token/ — but the session ensures server-rendered pages
-    (dashboard, profile, history, etc.) can also verify the user.
+    Accepts either a username OR an email address in the identifier field.
     """
     if request.user.is_authenticated:
         return redirect('dashboard')
 
     if request.method == 'POST':
-        email    = request.POST.get('email', '').strip()
-        password = request.POST.get('password', '')
+        identifier = request.POST.get('identifier', '').strip()
+        password   = request.POST.get('password', '')
 
-        if not email or not password:
-            messages.error(request, 'Please enter your email and password.')
+        if not identifier or not password:
+            messages.error(request, 'Please enter your username/email and password.')
             return render(request, 'users/login.html')
 
-        # authenticate() works because USERNAME_FIELD = 'email' and
-        # ModelBackend tries the USERNAME_FIELD by default.
-        user = authenticate(request, username=email, password=password)
+        user = _authenticate_by_username_or_email(request, identifier, password)
 
         if user is not None and user.is_active:
-            # Establish Django session so @login_required pages work
             login(request, user)
             next_url = request.GET.get('next', '/dashboard/')
             return redirect(next_url)
 
-        messages.error(request, 'Invalid email or password.')
+        messages.error(request, 'Invalid username/email or password.')
 
     return render(request, 'users/login.html')
 
@@ -70,7 +84,6 @@ def register_view(request):
                 username=username, email=email, password=password,
                 target_role=target, experience_level=exp,
             )
-            # Log the user in via session immediately after registration
             login(request, user)
             messages.success(request, f'Welcome, {username}! Your account is ready.')
             return redirect('dashboard')
