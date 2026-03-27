@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<section class="card page-hero page-hero-profile reveal">
+<section class="card page-hero reveal">
   <div class="hero-strip"><div class="hero-pill">Your account</div></div>
   <h1>Your profile</h1>
   <p>Update your info to personalize future interview sessions.</p>
@@ -12,7 +12,6 @@
 
 <div class="grid two">
 
-  <!-- Profile form -->
   <article class="card section-pad reveal">
     <h3>Profile details</h3>
     <form method="post" enctype="multipart/form-data" action="{% url 'profile' %}" id="profile-form">
@@ -23,7 +22,7 @@
       </label>
       <label>
         Bio
-        <textarea name="bio" rows="3" placeholder="Your goals, background...">{{ request.user.bio }}</textarea>
+        <textarea name="bio" rows="3" placeholder="Your goals, background…">{{ request.user.bio }}</textarea>
       </label>
       <label>
         Target role
@@ -32,31 +31,26 @@
       <label>
         Experience level
         <select name="experience_level">
-          <option value="junior" {% if request.user.experience_level == 'junior' %}selected{% endif %}>🟢 Junior</option>
-          <option value="mid"    {% if request.user.experience_level == 'mid'    %}selected{% endif %}>🔵 Mid-level</option>
-          <option value="senior" {% if request.user.experience_level == 'senior' %}selected{% endif %}>🟣 Senior</option>
+          <option value="junior" {% if request.user.experience_level == 'junior' %}selected{% endif %}>Junior</option>
+          <option value="mid"    {% if request.user.experience_level == 'mid'    %}selected{% endif %}>Mid-level</option>
+          <option value="senior" {% if request.user.experience_level == 'senior' %}selected{% endif %}>Senior</option>
         </select>
       </label>
 
-      <!-- ── Avatar uploader ── -->
       <div>
         <div class="avatar-upload-label">Avatar</div>
         <div class="avatar-upload-zone" id="avatar-drop-zone">
           <input type="file" name="avatar" id="avatar-input" accept="image/*" class="avatar-file-input">
-
-          <!-- Preview (hidden until image chosen) -->
           <div class="avatar-preview-wrap" id="avatar-preview-wrap" style="display:none;">
             <img id="avatar-preview-img" src="" alt="preview">
             <button type="button" class="avatar-clear-btn" id="avatar-clear-btn" title="Remove">✕</button>
           </div>
-
-          <!-- Placeholder (shown when no image) -->
           <div class="avatar-placeholder-zone" id="avatar-placeholder-zone">
             <div class="avatar-upload-icon">
               {% if request.user.avatar %}
-                <img src="{{ request.user.avatar.url }}" alt="current" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--cyan);">
+                <img src="{{ request.user.avatar.url }}" alt="current" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);">
               {% else %}
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--cyan)">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gold)">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                   <polyline points="17 8 12 3 7 8"/>
                   <line x1="12" y1="3" x2="12" y2="15"/>
@@ -67,20 +61,17 @@
               <span class="avatar-upload-main">
                 {% if request.user.avatar %}Change avatar{% else %}Upload avatar{% endif %}
               </span>
-              <span class="avatar-upload-sub">Drag & drop or click to browse · PNG, JPG, WebP</span>
+              <span class="avatar-upload-sub">Drag &amp; drop or click · PNG, JPG, WebP</span>
             </div>
           </div>
         </div>
       </div>
-      <!-- ── end Avatar uploader ── -->
 
-      <button type="submit" style="margin-top:4px;">Save changes</button>
+      <button type="submit" style="margin-top:6px;">Save changes</button>
     </form>
   </article>
 
-  <!-- Stats + avatar display -->
   <article class="card section-pad profile-side-panel reveal">
-
     <div class="avatar-wrap">
       {% if request.user.avatar %}
         <img src="{{ request.user.avatar.url }}" alt="avatar" class="avatar-img" id="profile-avatar-display">

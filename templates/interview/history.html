@@ -4,9 +4,9 @@
 
 {% block content %}
 
-<section class="card page-hero page-hero-history reveal">
+<section class="card page-hero reveal">
   <div class="hero-strip"><div class="hero-pill">All sessions</div></div>
-  <h1>Interview history timeline</h1>
+  <h1>Interview history</h1>
   <p>Browse all practice attempts and jump back into unfinished sessions instantly.</p>
 </section>
 
@@ -30,9 +30,9 @@
             <h4>{{ s.title|default:'Untitled Session' }}</h4>
             <p>
               <span class="mono">{{ s.category }}</span>
-              <span class="dot">•</span>
+              <span class="dot">·</span>
               <span class="mono">{{ s.difficulty }}</span>
-              <span class="dot">•</span>
+              <span class="dot">·</span>
               <span class="mono">{{ s.created_at|date:'M d, Y' }}</span>
             </p>
           </div>
@@ -56,7 +56,7 @@
   {% else %}
     <div class="empty">
       <p>You haven't completed any sessions yet.</p>
-      <a class="button" href="{% url 'new_interview' %}">Start your first interview</a>
+      <a class="button" href="{% url 'new_interview' %}">Start your first interview →</a>
     </div>
   {% endif %}
 </section>

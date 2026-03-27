@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<section class="card page-hero page-hero-room reveal">
+<section class="card page-hero reveal">
   <div class="hero-strip"><div class="hero-pill">Live session</div></div>
   <h1>{{ session.title|default:'Interview Session' }}</h1>
   <p>
@@ -19,19 +19,16 @@
 
 <div class="grid two">
 
-  <!-- Question + answer -->
   <article class="card section-pad reveal">
     <h3>Current question</h3>
-
     <div class="room-question" id="question-text">
       Click <strong>Start session</strong> to fetch your first question.
     </div>
-
     <form id="answer-form">
       {% csrf_token %}
       <label>
         Your answer
-        <textarea id="answer-text" name="answer_text" rows="9" placeholder="Type your response here..."></textarea>
+        <textarea id="answer-text" name="answer_text" rows="9" placeholder="Type your response here…"></textarea>
       </label>
       <div class="actions">
         <button type="submit">Submit answer →</button>
@@ -39,13 +36,12 @@
     </form>
   </article>
 
-  <!-- Controls -->
   <article class="card section-pad room-side-panel reveal">
     <div>
       <h3>Session controls</h3>
       <div class="actions">
         <button id="start-session-btn" type="button">Start session</button>
-        <button id="end-session-btn" type="button" class="button alt">End and view results</button>
+        <button id="end-session-btn" type="button" class="button alt">End &amp; view results</button>
       </div>
     </div>
 

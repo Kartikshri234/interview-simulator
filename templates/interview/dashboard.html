@@ -5,14 +5,15 @@
 {% block content %}
 
 <div class="dashboard-layout">
+
+  <!-- Hero -->
   <section class="card dash-hero reveal">
-    <div class="dash-hero-glow"></div>
     <div class="dash-hero-copy">
       <p class="dash-kicker">Performance cockpit</p>
       <h1>Welcome back, <span>{{ request.user.username }}</span></h1>
       <p>Track momentum, review recent attempts, and jump back into interview practice in one place.</p>
       <div class="actions">
-        <a class="button" href="{% url 'new_interview' %}">Start new interview</a>
+        <a class="button" href="{% url 'new_interview' %}">Start new interview →</a>
         <a class="button alt" href="{% url 'history' %}">View full history</a>
       </div>
     </div>
@@ -26,6 +27,7 @@
     </div>
   </section>
 
+  <!-- KPIs -->
   <section class="dash-kpi-grid">
     <article class="card dash-kpi reveal">
       <p>Total sessions</p>
@@ -44,6 +46,7 @@
     </article>
   </section>
 
+  <!-- Score insight -->
   <section class="card dash-insight reveal" data-score="{{ stats.avg_score|default:0|floatformat:1 }}">
     <div class="score-ring" id="score-ring">
       <div>
@@ -53,11 +56,12 @@
     </div>
     <div class="insight-copy">
       <h3>Performance pulse</h3>
-      <p>Your average score is being tracked continuously across sessions. Use this signal to iterate on weak areas and push toward interview readiness.</p>
-      <a href="{% url 'new_interview' %}" class="button">Start a focused practice round</a>
+      <p>Your average score is tracked continuously across all sessions. Use this signal to iterate on weak areas and steadily push toward interview readiness.</p>
+      <a href="{% url 'new_interview' %}" class="button">Start a focused practice round →</a>
     </div>
   </section>
 
+  <!-- Recent sessions -->
   <section class="card dash-recent reveal">
     <div class="dash-recent-head">
       <h3>Recent sessions</h3>
@@ -80,7 +84,7 @@
               <h4>{{ s.title|default:'Untitled Session' }}</h4>
               <p>
                 <span class="mono">{{ s.category }}</span>
-                <span class="dot">•</span>
+                <span class="dot">·</span>
                 <span class="mono">{{ s.created_at|date:'M d, Y' }}</span>
               </p>
             </div>
@@ -103,11 +107,12 @@
       <p class="recent-filter-empty" id="recent-filter-empty" hidden>No sessions match this filter.</p>
     {% else %}
       <div class="empty">
-        <p>No sessions yet. Start your first interview to track your progress.</p>
-        <a class="button" href="{% url 'new_interview' %}">Create first session</a>
+        <p>No sessions yet. Start your first interview to begin tracking your progress.</p>
+        <a class="button" href="{% url 'new_interview' %}">Create first session →</a>
       </div>
     {% endif %}
   </section>
+
 </div>
 
 {% endblock %}

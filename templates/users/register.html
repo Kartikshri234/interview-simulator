@@ -1,15 +1,16 @@
 {% extends 'base.html' %}
-{% block title %}Register | InterviewAI{% endblock %}
+{% block title %}Create Account | InterviewAI{% endblock %}
 
 {% block content %}
 <div class="auth-wrap">
   <div class="auth-card wide auth-card-refresh reveal">
+
     <div class="auth-logo">
-      <span>◈</span> InterviewAI
+      <span class="brand-dot"></span> InterviewAI
     </div>
 
     <h1>Create your account</h1>
-    <p class="subtitle">Set your target role and level to get personalized interview sessions.</p>
+    <p class="subtitle">Set your target role and experience level to receive personalized interview sessions tailored to your goals.</p>
 
     <form method="post" action="{% url 'register' %}">
       {% csrf_token %}
@@ -44,9 +45,9 @@
         <label>
           Experience level
           <select name="experience_level">
-            <option value="junior">🟢 Junior</option>
-            <option value="mid" selected>🔵 Mid-level</option>
-            <option value="senior">🟣 Senior</option>
+            <option value="junior">Junior</option>
+            <option value="mid" selected>Mid-level</option>
+            <option value="senior">Senior</option>
           </select>
         </label>
       </div>

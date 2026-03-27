@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<section class="card page-hero page-hero-results reveal">
+<section class="card page-hero reveal">
   <div class="hero-strip"><div class="hero-pill">Session complete</div></div>
   <h1>Session results snapshot</h1>
   <p>
@@ -17,7 +17,7 @@
     {% endif %}
   </p>
   <div class="actions">
-    <a class="button" href="{% url 'new_interview' %}">New interview</a>
+    <a class="button" href="{% url 'new_interview' %}">New interview →</a>
     <a class="button alt" href="{% url 'history' %}">View history</a>
   </div>
 </section>
@@ -44,7 +44,7 @@
 
     {% if session.readiness %}
       <div class="results-readiness-wrap">
-        <div class="muted results-mini-head">Readiness</div>
+        <div class="results-mini-head">Readiness</div>
         <span class="readiness-tag">{{ session.readiness }}</span>
       </div>
     {% endif %}
@@ -82,23 +82,20 @@
       {% for answer in answers %}
         <article class="card answer-card">
           <h4>Q{{ forloop.counter }}. {{ answer.question_text }}</h4>
-
           <p><strong>Your answer:</strong> {{ answer.answer_text|default:'No answer recorded.' }}</p>
-
           <div class="answer-metrics-row">
             <div>
-              <div class="muted results-mini-head">Score</div>
+              <div class="results-mini-head">Score</div>
               <span class="answer-metric-value">{{ answer.score|default:0|floatformat:1 }}/10</span>
             </div>
             <div>
-              <div class="muted results-mini-head">Sentiment</div>
+              <div class="results-mini-head">Sentiment</div>
               <span class="mono">{{ answer.sentiment|default:'—' }} ({{ answer.sentiment_score|default:0|floatformat:2 }})</span>
             </div>
           </div>
-
           {% if answer.keywords_matched %}
             <div>
-              <div class="muted results-mini-head">Keywords matched</div>
+              <div class="results-mini-head">Keywords matched</div>
               <div class="keyword-chips">
                 {% for kw in answer.keywords_matched %}
                   <span class="keyword-chip">{{ kw }}</span>
@@ -106,9 +103,8 @@
               </div>
             </div>
           {% endif %}
-
           {% if answer.ai_feedback %}
-            <p style="margin-top:12px;"><strong>AI feedback:</strong> {{ answer.ai_feedback }}</p>
+            <p style="margin-top:14px;"><strong>AI feedback:</strong> {{ answer.ai_feedback }}</p>
           {% endif %}
           {% if answer.improvement_suggestions %}
             <p><strong>Suggestions:</strong> {{ answer.improvement_suggestions }}</p>
