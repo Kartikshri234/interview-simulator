@@ -980,8 +980,9 @@ td a:hover { text-decoration: underline; }
 .recent-item.is-hidden { display: none; }
 
 /* ── Reveal animations ── */
-.reveal { opacity: 0; transform: translateY(12px); }
-.reveal.is-visible {
+.reveal { opacity: 1; transform: translateY(0); }
+html.js .reveal { opacity: 0; transform: translateY(12px); }
+html.js .reveal.is-visible {
   opacity: 1; transform: translateY(0);
   transition: opacity 0.45s cubic-bezier(0.23, 1, 0.32, 1), transform 0.45s cubic-bezier(0.23, 1, 0.32, 1);
 }

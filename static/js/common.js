@@ -27,7 +27,12 @@ window.getCsrfToken = function () {
     const items = document.querySelectorAll('.reveal');
     if (!items.length) return;
 
-    const animOff      = localStorage.getItem('ui-animations') === 'false';
+    let animOff = false;
+    try {
+        animOff = localStorage.getItem('ui-animations') === 'false';
+    } catch (_) {
+        animOff = false;
+    }
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (reduceMotion || animOff || !('IntersectionObserver' in window)) {
