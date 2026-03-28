@@ -73,13 +73,8 @@ TEMPLATES = [
 # ── Database ─────────────────────────────────────────────────
 DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL:
-    # Force psycopg3 engine (compatible with Python 3.14)
     DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            engine='django.db.backends.postgresql',
-        )
+        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
     }
 else:
     DATABASES = {
