@@ -14,6 +14,14 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
+# DeepFace is optional — not available on Render free tier (no tensorflow)
+try:
+    from deepface import DeepFace
+    DEEPFACE_AVAILABLE = True
+except Exception:
+    DeepFace = None
+    DEEPFACE_AVAILABLE = False
+
 
 # ── 1. QUESTION GENERATION ────────────────────────────────────
 
@@ -282,10 +290,14 @@ def analyze_sentiment(text: str) -> dict:
 # ── 5. FACIAL EXPRESSION ANALYSIS ────────────────────────────
 
 def analyze_face_base64(image_b64: str) -> dict:
-    """Run DeepFace on a base64-encoded image."""
+    """Run DeepFace on a base64-encoded image.
+    Falls back gracefully if DeepFace/TensorFlow is not available (e.g. Render free tier).
+    """
+    if not DEEPFACE_AVAILABLE:
+        logger.info('DeepFace not available — returning neutral emotion.')
+        return {'dominant_emotion': 'neutral', 'emotions': {'neutral': 100.0}}
     try:
         import cv2, numpy as np, tempfile
-        from deepface import DeepFace
         img_bytes = base64.b64decode(image_b64)
         nparr     = np.frombuffer(img_bytes, np.uint8)
         img       = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -371,7 +383,6 @@ def analyze_voice(text: str, time_taken_seconds: int = 60) -> dict:
     lower = text.lower()
     found_fillers = []
     for filler in FILLER_WORDS:
-        # Count occurrences as whole-word matches
         import re
         pattern = r'\b' + re.escape(filler) + r'\b'
         matches = re.findall(pattern, lower)
