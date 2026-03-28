@@ -71,26 +71,24 @@ TEMPLATES = [
 ]
 
 # ── Database ─────────────────────────────────────────────────
-DATABASE_URL = os.getenv('DATABASE_URL', '')
+_DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
 
-if DATABASE_URL:
-    db_config = dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
-    if db_config:
-        DATABASES = {'default': db_config}
-    else:
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-        }
+_SQLITE_DB = {
+    'ENGINE': 'django.db.backends.sqlite3',
+    'NAME': BASE_DIR / 'db.sqlite3',
+}
+
+if _DATABASE_URL and (_DATABASE_URL.startswith('postgres') or _DATABASE_URL.startswith('postgresql')):
+    try:
+        _parsed = dj_database_url.parse(_DATABASE_URL, conn_max_age=600)
+        if _parsed and _parsed.get('NAME'):
+            DATABASES = {'default': _parsed}
+        else:
+            DATABASES = {'default': _SQLITE_DB}
+    except Exception:
+        DATABASES = {'default': _SQLITE_DB}
 else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+    DATABASES = {'default': _SQLITE_DB}
 
 # ── Auth ─────────────────────────────────────────────────────
 AUTH_USER_MODEL = 'users.CustomUser'
@@ -167,13 +165,13 @@ MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # ── Channel Layers ───────────────────────────────────────────
-REDIS_URL = os.getenv('REDIS_URL', '')
+_REDIS_URL = os.getenv('REDIS_URL', '').strip()
 
-if REDIS_URL:
+if _REDIS_URL:
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
-            'CONFIG': {'hosts': [REDIS_URL]},
+            'CONFIG': {'hosts': [_REDIS_URL]},
         },
     }
 else:
