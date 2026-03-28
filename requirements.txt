@@ -3,6 +3,7 @@ anthropic
 python-docx
 scikit-learn
 werkzeug
+setuptools==69.5.1
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 djangorestframework-simplejwt==5.3.0
