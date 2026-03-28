@@ -2,6 +2,7 @@ services:
   - type: web
     name: interview-simulator
     runtime: python
+    pythonVersion: "3.11.9"
     buildCommand: "./build.sh"
     startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2"
     envVars:
@@ -10,7 +11,7 @@ services:
       - key: DEBUG
         value: "False"
       - key: PYTHON_VERSION
-        value: "3.11.0"
+        value: "3.11.9"
       - key: DATABASE_URL
         fromDatabase:
           name: interview-simulator-db

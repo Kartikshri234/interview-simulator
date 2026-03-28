@@ -2,7 +2,7 @@
 # build.sh — Render build script
 set -o errexit
 
-# Fix pkg_resources missing on Python 3.14
+# Ensure setuptools/pkg_resources are available before anything else
 pip install --upgrade pip setuptools wheel
 
 pip install -r requirements.txt

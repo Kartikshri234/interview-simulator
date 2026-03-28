@@ -1,18 +1,17 @@
 [phases.setup]
-nixPkgs = ["python311", "gcc", "libpq", "zlib", "libjpeg", "libpng", "freetype"]
+nixPkgs = ["python311", "python311Packages.pip", "gcc", "libpq", "zlib", "libjpeg", "libpng", "freetype"]
 
 [phases.install]
 cmds = [
-  "pip install --upgrade pip setuptools wheel",
-  "pip install Pillow>=10.4.0 --no-cache-dir",
-  "pip install -r requirements.txt"
+  "python3.11 -m pip install --upgrade pip setuptools wheel",
+  "python3.11 -m pip install -r requirements.txt"
 ]
 
 [phases.build]
 cmds = [
-  "python manage.py collectstatic --noinput",
-  "python manage.py migrate"
+  "python3.11 manage.py collectstatic --noinput",
+  "python3.11 manage.py migrate"
 ]
 
 [start]
-cmd = "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2"
+cmd = "python3.11 -m gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2"
