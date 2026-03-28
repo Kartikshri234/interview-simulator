@@ -2,6 +2,7 @@
 Django Settings — AI Interview Simulator
 """
 import os
+import dj_database_url
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
@@ -12,7 +13,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ── Security ─────────────────────────────────────────────────
 SECRET_KEY    = os.getenv('SECRET_KEY', 'django-insecure-replace-this-key')
-DEBUG         = os.getenv('DEBUG', 'True') == 'True'
+DEBUG         = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 # ── Apps ─────────────────────────────────────────────────────
@@ -26,7 +27,7 @@ INSTALLED_APPS = [
     # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',   # ← token blacklist
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'channels',
     # Local
@@ -70,12 +71,19 @@ TEMPLATES = [
 ]
 
 # ── Database ─────────────────────────────────────────────────
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Uses DATABASE_URL env var on Railway (PostgreSQL), falls back to SQLite locally
+DATABASE_URL = os.getenv('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # ── Auth ─────────────────────────────────────────────────────
 AUTH_USER_MODEL = 'users.CustomUser'
@@ -100,7 +108,6 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
-    # Global throttle — additional per-view throttles applied in api_views.py
     'DEFAULT_THROTTLE_CLASSES': [
         'rest_framework.throttling.AnonRateThrottle',
         'rest_framework.throttling.UserRateThrottle',
@@ -108,58 +115,46 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '30/minute',
         'user': '120/minute',
-        'token_obtain': '5/minute',    # applied explicitly on login view
-        'token_refresh': '10/minute',  # applied explicitly on refresh view
+        'token_obtain': '5/minute',
+        'token_refresh': '10/minute',
     },
 }
 
-# ── JWT — hardened config ────────────────────────────────────
+# ── JWT ──────────────────────────────────────────────────────
 SIMPLE_JWT = {
-    # Token lifetimes
-    'ACCESS_TOKEN_LIFETIME':  timedelta(minutes=30),   # short-lived
+    'ACCESS_TOKEN_LIFETIME':  timedelta(minutes=30),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-
-    # Rotation & blacklisting
-    'ROTATE_REFRESH_TOKENS':   True,   # issue a new refresh token on every refresh
-    'BLACKLIST_AFTER_ROTATION': True,  # old refresh token is immediately blacklisted
-
-    # Algorithm & signing
+    'ROTATE_REFRESH_TOKENS':   True,
+    'BLACKLIST_AFTER_ROTATION': True,
     'ALGORITHM': 'HS256',
     'SIGNING_KEY': SECRET_KEY,
-
-    # Token type enforcement
     'AUTH_HEADER_TYPES': ('Bearer',),
     'AUTH_HEADER_NAME':  'HTTP_AUTHORIZATION',
     'USER_ID_FIELD':     'id',
     'USER_ID_CLAIM':     'user_id',
-
-    # Use our custom token class that embeds extra claims
     'TOKEN_OBTAIN_SERIALIZER': 'apps.users.jwt_utils.CustomTokenObtainPairSerializer',
-
-    # Prevent token reuse after single use (access tokens only)
     'UPDATE_LAST_LOGIN': True,
-
-    # Token classes
     'ACCESS_TOKEN_CLASS':  'rest_framework_simplejwt.tokens.AccessToken',
     'REFRESH_TOKEN_CLASS': 'rest_framework_simplejwt.tokens.RefreshToken',
     'SLIDING_TOKEN_CLASS': 'rest_framework_simplejwt.tokens.SlidingToken',
     'SLIDING_TOKEN_REFRESH_CLASS': 'rest_framework_simplejwt.tokens.SlidingToken',
-
     'SLIDING_TOKEN_LIFETIME':         timedelta(minutes=30),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
-
-    # JTI claim used for blacklisting
     'JTI_CLAIM': 'jti',
 }
 
 # ── CORS ─────────────────────────────────────────────────────
-CORS_ALLOWED_ORIGINS   = ['http://localhost:8000', 'http://127.0.0.1:8000']
+CORS_ALLOWED_ORIGINS = os.getenv(
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:8000,http://127.0.0.1:8000'
+).split(',')
 CORS_ALLOW_CREDENTIALS = True
 
 # ── Static & Media ───────────────────────────────────────────
 STATIC_URL       = '/static/'
 STATIC_ROOT      = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
