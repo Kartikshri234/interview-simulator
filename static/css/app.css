@@ -873,7 +873,7 @@ td a:hover { text-decoration: underline; }
 /* ── KPI grid ── */
 .dash-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 .dash-kpi { padding: 22px 24px; }
@@ -1725,7 +1725,7 @@ body.compact-mode .dash-kpi { padding: 16px 18px; }
   .section-pad { padding: 18px 20px; }
   .cat-grid { grid-template-columns: repeat(3, 1fr); }
   .dash-hero { grid-template-columns: 1fr; padding: 24px; }
-  .dash-kpi-grid { grid-template-columns: 1fr; }
+  .dash-kpi-grid { grid-template-columns: repeat(2, 1fr); }
   .dash-insight { grid-template-columns: 1fr; justify-items: start; padding: 22px; }
   .score-ring { width: 140px; height: 140px; }
   .recent-item { flex-direction: column; align-items: flex-start; }

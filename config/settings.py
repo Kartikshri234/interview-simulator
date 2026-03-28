@@ -2,14 +2,10 @@
 Django Settings — AI Interview Simulator
 """
 import os
+import dj_database_url
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
-
-try:
-    import dj_database_url
-except ImportError:
-    dj_database_url = None
 
 load_dotenv()
 
@@ -74,6 +70,22 @@ TEMPLATES = [
     },
 ]
 
+# ── Auth ─────────────────────────────────────────────────────
+AUTH_USER_MODEL     = 'users.CustomUser'
+
+# FIX: Point Django's login_required redirect to our custom login page
+LOGIN_URL           = '/login/'
+LOGIN_REDIRECT_URL  = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/login/'
+
+AUTH_PASSWORD_VALIDATORS = [
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+     'OPTIONS': {'min_length': 8}},
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
+]
+
 # ── Database ─────────────────────────────────────────────────
 _DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
 
@@ -82,11 +94,7 @@ _SQLITE_DB = {
     'NAME': BASE_DIR / 'db.sqlite3',
 }
 
-if (
-    dj_database_url is not None
-    and _DATABASE_URL
-    and (_DATABASE_URL.startswith('postgres') or _DATABASE_URL.startswith('postgresql'))
-):
+if _DATABASE_URL and (_DATABASE_URL.startswith('postgres') or _DATABASE_URL.startswith('postgresql')):
     try:
         _parsed = dj_database_url.parse(_DATABASE_URL, conn_max_age=600)
         if _parsed and _parsed.get('NAME'):
@@ -97,21 +105,6 @@ if (
         DATABASES = {'default': _SQLITE_DB}
 else:
     DATABASES = {'default': _SQLITE_DB}
-
-# ── Auth ─────────────────────────────────────────────────────
-AUTH_USER_MODEL = 'users.CustomUser'
-
-AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-     'OPTIONS': {'min_length': 8}},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
-]
-
-LOGIN_URL           = '/login/'
-LOGIN_REDIRECT_URL  = '/dashboard/'
-LOGOUT_REDIRECT_URL = '/login/'
 
 # ── REST Framework ───────────────────────────────────────────
 REST_FRAMEWORK = {
@@ -147,13 +140,6 @@ SIMPLE_JWT = {
     'USER_ID_CLAIM':     'user_id',
     'TOKEN_OBTAIN_SERIALIZER': 'apps.users.jwt_utils.CustomTokenObtainPairSerializer',
     'UPDATE_LAST_LOGIN': True,
-    'ACCESS_TOKEN_CLASS':  'rest_framework_simplejwt.tokens.AccessToken',
-    'REFRESH_TOKEN_CLASS': 'rest_framework_simplejwt.tokens.RefreshToken',
-    'SLIDING_TOKEN_CLASS': 'rest_framework_simplejwt.tokens.SlidingToken',
-    'SLIDING_TOKEN_REFRESH_CLASS': 'rest_framework_simplejwt.tokens.SlidingToken',
-    'SLIDING_TOKEN_LIFETIME':         timedelta(minutes=30),
-    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
-    'JTI_CLAIM': 'jti',
 }
 
 # ── CORS ─────────────────────────────────────────────────────
