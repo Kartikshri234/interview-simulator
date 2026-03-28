@@ -71,11 +71,15 @@ TEMPLATES = [
 ]
 
 # ── Database ─────────────────────────────────────────────────
-# Uses DATABASE_URL env var on Railway (PostgreSQL), falls back to SQLite locally
 DATABASE_URL = os.getenv('DATABASE_URL')
 if DATABASE_URL:
+    # Force psycopg3 engine (compatible with Python 3.14)
     DATABASES = {
-        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            engine='django.db.backends.postgresql',
+        )
     }
 else:
     DATABASES = {
