@@ -14,7 +14,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ── Security ─────────────────────────────────────────────────
 SECRET_KEY    = os.getenv('SECRET_KEY', 'django-insecure-replace-this-key')
 DEBUG         = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
 
 # ── Apps ─────────────────────────────────────────────────────
 INSTALLED_APPS = [
@@ -71,11 +71,19 @@ TEMPLATES = [
 ]
 
 # ── Database ─────────────────────────────────────────────────
-DATABASE_URL = os.getenv('DATABASE_URL')
+DATABASE_URL = os.getenv('DATABASE_URL', '')
+
 if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
-    }
+    db_config = dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+    if db_config:
+        DATABASES = {'default': db_config}
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
 else:
     DATABASES = {
         'default': {
@@ -159,12 +167,21 @@ MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # ── Channel Layers ───────────────────────────────────────────
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {'hosts': [os.getenv('REDIS_URL', 'redis://localhost:6379')]},
-    },
-}
+REDIS_URL = os.getenv('REDIS_URL', '')
+
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels_redis.core.RedisChannelLayer',
+            'CONFIG': {'hosts': [REDIS_URL]},
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
 
 # ── AI APIs ──────────────────────────────────────────────────
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
