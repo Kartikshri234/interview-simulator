@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: interview-simulator
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: interview-simulator-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: interview-simulator-redis
+          type: redis
+          property: connectionString
+
+databases:
+  - name: interview-simulator-db
+    databaseName: interview_simulator
+    user: interview_user
+    plan: free
+
+  - name: interview-simulator-redis
+    type: redis
+    plan: free
+    ipAllowList: []
