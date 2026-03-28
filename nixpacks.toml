@@ -1,9 +1,10 @@
 [phases.setup]
-nixPkgs = ["python311", "gcc", "libpq"]
+nixPkgs = ["python311", "gcc", "libpq", "zlib", "libjpeg", "libpng", "freetype"]
 
 [phases.install]
 cmds = [
   "pip install --upgrade pip setuptools wheel",
+  "pip install Pillow>=10.4.0 --no-cache-dir",
   "pip install -r requirements.txt"
 ]
 
