@@ -20,6 +20,8 @@
       {% endfor %}
     {% endif %}
 
+    <p id="login-error" class="auth-inline-error" style="min-height:1.4em;margin-bottom:6px;"></p>
+
     <form method="post" action="{% url 'login' %}" id="login-form">
       {% csrf_token %}
       <label>
@@ -43,7 +45,6 @@
                autocomplete="current-password"
                placeholder="••••••••">
       </label>
-      <p id="login-error" class="auth-inline-error auth-inline-error-space"></p>
       <button type="submit" id="login-btn" class="auth-submit-btn">
         Sign in →
       </button>
@@ -67,11 +68,11 @@
         banner.style.display = 'block';
     }
 
-    const form           = document.getElementById('login-form');
-    const identifierEl   = document.getElementById('login-identifier');
-    const passwordEl     = document.getElementById('login-password');
-    const errorEl        = document.getElementById('login-error');
-    const btn            = document.getElementById('login-btn');
+    const form         = document.getElementById('login-form');
+    const identifierEl = document.getElementById('login-identifier');
+    const passwordEl   = document.getElementById('login-password');
+    const errorEl      = document.getElementById('login-error');
+    const btn          = document.getElementById('login-btn');
 
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -87,14 +88,19 @@
         btn.textContent = 'Signing in…';
         errorEl.textContent = '';
 
-        // Call the JWT token endpoint — always send as 'email' field
-        // (our backend resolver handles both username and email inputs)
-        // Store JWT tokens in background (best effort), then let Django session form submit
+        // Step 1: Obtain JWT tokens and store them
         if (window.Auth) {
-            try { await window.Auth.login(identifier, password); } catch { /* ignore — Django session handles auth */ }
+            try {
+                await window.Auth.login(identifier, password);
+            } catch (err) {
+                // JWT login failed — show error but still try Django session login
+                // (might be a JWT-specific issue while Django auth is fine)
+                console.warn('JWT login attempt failed:', err.message);
+            }
         }
 
-        // Submit the Django session form to create the server-side session
+        // Step 2: Submit the Django form for server-side session
+        // This is the authoritative auth — page redirects on success
         form.submit();
     });
 })();

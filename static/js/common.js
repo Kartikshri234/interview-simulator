@@ -2,11 +2,10 @@
    common.js  —  Shared utilities + JWT Auth Manager
    =============================================================
    JWT Auth Manager
-   ─────────────────
    • Stores access + refresh tokens in localStorage
    • Decodes JWT payload to read expiry (exp claim)
    • Auto-refreshes access token before it expires
-   • On hard failure (refresh expired / blacklisted) → auto logout
+   • On hard failure → auto logout
    • apiCall() replaces plain fetch() for all authenticated requests
    ============================================================= */
 
@@ -61,19 +60,27 @@ window.Auth = (function () {
     const REFRESH_BUFFER_SECONDS = 60;
 
     function saveTokens(access, refresh, user) {
-        localStorage.setItem(KEYS.access,  access);
-        localStorage.setItem(KEYS.refresh, refresh);
-        if (user) localStorage.setItem(KEYS.user, JSON.stringify(user));
+        try {
+            if (access)  localStorage.setItem(KEYS.access,  access);
+            if (refresh) localStorage.setItem(KEYS.refresh, refresh);
+            if (user)    localStorage.setItem(KEYS.user, JSON.stringify(user));
+        } catch(e) { console.warn('Auth: could not save tokens', e); }
     }
 
     function clearTokens() {
-        localStorage.removeItem(KEYS.access);
-        localStorage.removeItem(KEYS.refresh);
-        localStorage.removeItem(KEYS.user);
+        try {
+            localStorage.removeItem(KEYS.access);
+            localStorage.removeItem(KEYS.refresh);
+            localStorage.removeItem(KEYS.user);
+        } catch(e) {}
     }
 
-    function getAccess()  { return localStorage.getItem(KEYS.access);  }
-    function getRefresh() { return localStorage.getItem(KEYS.refresh); }
+    function getAccess()  {
+        try { return localStorage.getItem(KEYS.access); } catch { return null; }
+    }
+    function getRefresh() {
+        try { return localStorage.getItem(KEYS.refresh); } catch { return null; }
+    }
     function getUser()    {
         try { return JSON.parse(localStorage.getItem(KEYS.user) || 'null'); }
         catch { return null; }
@@ -82,11 +89,14 @@ window.Auth = (function () {
     function decodePayload(token) {
         try {
             const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-            return JSON.parse(atob(base64));
+            // Pad base64 string correctly
+            const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4);
+            return JSON.parse(atob(padded));
         } catch { return null; }
     }
 
     function isExpired(token, bufferSeconds = 0) {
+        if (!token) return true;
         const payload = decodePayload(token);
         if (!payload || !payload.exp) return true;
         return payload.exp - Math.floor(Date.now() / 1000) < bufferSeconds;
@@ -98,7 +108,10 @@ window.Auth = (function () {
         if (_refreshPromise) return _refreshPromise;
         _refreshPromise = (async () => {
             const refresh = getRefresh();
-            if (!refresh || isExpired(refresh)) { forceLogout(); throw new Error('Session expired.'); }
+            if (!refresh || isExpired(refresh)) {
+                forceLogout();
+                throw new Error('Session expired.');
+            }
             const res = await fetch('/api/auth/token/refresh/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -115,26 +128,40 @@ window.Auth = (function () {
 
     async function getValidAccessToken() {
         let access = getAccess();
-        if (!access) { forceLogout(); throw new Error('Not authenticated.'); }
-        if (isExpired(access, REFRESH_BUFFER_SECONDS)) access = await refreshAccessToken();
+        // If no token at all — try to obtain one silently via cookie session
+        if (!access) {
+            throw new Error('Not authenticated. Please log in.');
+        }
+        if (isExpired(access, REFRESH_BUFFER_SECONDS)) {
+            access = await refreshAccessToken();
+        }
         return access;
     }
 
     async function apiCall(url, options = {}) {
-        const access = await getValidAccessToken();
-        const headers = Object.assign({
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${access}`,
-            'X-CSRFToken': getCsrfToken(),
-        }, options.headers || {});
+        let access;
+        try {
+            access = await getValidAccessToken();
+        } catch(e) {
+            forceLogout();
+            throw e;
+        }
+
+        // Don't override Content-Type if caller passes FormData
+        const isFormData = options.body instanceof FormData;
+        const headers = Object.assign(
+            isFormData ? {} : { 'Content-Type': 'application/json' },
+            { 'Authorization': `Bearer ${access}`, 'X-CSRFToken': getCsrfToken() },
+            options.headers || {}
+        );
+
         const res = await fetch(url, Object.assign({}, options, { headers, credentials: 'same-origin' }));
+
         if (res.status === 401) {
             let newAccess;
             try { newAccess = await refreshAccessToken(); } catch { forceLogout(); throw new Error('Session expired.'); }
-            const retryRes = await fetch(url, Object.assign({}, options, {
-                headers: Object.assign({}, headers, { 'Authorization': `Bearer ${newAccess}` }),
-                credentials: 'same-origin',
-            }));
+            const retryHeaders = Object.assign({}, headers, { 'Authorization': `Bearer ${newAccess}` });
+            const retryRes = await fetch(url, Object.assign({}, options, { headers: retryHeaders, credentials: 'same-origin' }));
             if (retryRes.status === 401) { forceLogout(); throw new Error('Session expired.'); }
             return retryRes;
         }
@@ -142,23 +169,19 @@ window.Auth = (function () {
     }
 
     /**
-     * Login with username OR email.
-     * Sends the identifier as the 'email' field — the backend resolver
-     * handles both usernames and email addresses transparently.
+     * Login: POST to JWT endpoint, store tokens, return response data.
      */
     async function login(identifier, password) {
         const res = await fetch('/api/auth/token/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            // Always send as 'email'; backend resolves username → email internally
             body: JSON.stringify({ email: identifier, password }),
         });
 
         if (!res.ok) {
             const data = await res.json().catch(() => ({}));
-            // Surface the most useful error message
             const msg = data.detail
-                || (data.email && data.email[0])
+                || (data.email    && (Array.isArray(data.email)    ? data.email[0]    : data.email))
                 || (data.non_field_errors && data.non_field_errors[0])
                 || 'Invalid username/email or password.';
             throw new Error(msg);
@@ -172,8 +195,12 @@ window.Auth = (function () {
     async function logout() {
         const refresh = getRefresh();
         if (refresh) {
-            try { await apiCall('/api/users/logout/', { method: 'POST', body: JSON.stringify({ refresh }) }); }
-            catch { /* best effort */ }
+            try {
+                await apiCall('/api/users/logout/', {
+                    method: 'POST',
+                    body: JSON.stringify({ refresh }),
+                });
+            } catch { /* best effort */ }
         }
         clearTokens();
         window.location.href = '/login/';
@@ -182,13 +209,20 @@ window.Auth = (function () {
     function forceLogout() {
         clearTokens();
         const authPages = ['/login/', '/register/'];
-        if (!authPages.includes(window.location.pathname)) window.location.href = '/login/?reason=expired';
+        if (!authPages.some(p => window.location.pathname.startsWith(p))) {
+            window.location.href = '/login/?reason=expired';
+        }
     }
 
     function isAuthenticated() {
-        const access = getAccess(), refresh = getRefresh();
-        if (!access || !refresh) return false;
-        return !isExpired(refresh);
+        const access  = getAccess();
+        const refresh = getRefresh();
+        if (!access && !refresh) return false;
+        // Consider authenticated if refresh token is still valid
+        if (refresh && !isExpired(refresh)) return true;
+        // Fall back to access token
+        if (access  && !isExpired(access))  return true;
+        return false;
     }
 
     function startAutoRefresh() {
@@ -196,14 +230,25 @@ window.Auth = (function () {
         if (!access) return;
         const payload = decodePayload(access);
         if (!payload || !payload.exp) return;
-        const refreshInMs = Math.max((payload.exp - Math.floor(Date.now() / 1000) - REFRESH_BUFFER_SECONDS) * 1000, 0);
+        const refreshInMs = Math.max(
+            (payload.exp - Math.floor(Date.now() / 1000) - REFRESH_BUFFER_SECONDS) * 1000,
+            5000   // minimum 5 seconds
+        );
         setTimeout(async function autoRefreshTick() {
             if (!isAuthenticated()) return;
-            try { await refreshAccessToken(); startAutoRefresh(); } catch { forceLogout(); }
+            try { await refreshAccessToken(); startAutoRefresh(); }
+            catch { /* forceLogout is called inside refreshAccessToken */ }
         }, refreshInMs);
     }
 
-    if (getAccess() && isAuthenticated()) startAutoRefresh();
+    // Boot: start auto-refresh only if we have tokens
+    if (getAccess() || getRefresh()) {
+        if (isAuthenticated()) startAutoRefresh();
+    }
 
-    return { login, logout, forceLogout, isAuthenticated, getUser, getAccess, apiCall, saveTokens, clearTokens };
+    return {
+        login, logout, forceLogout,
+        isAuthenticated, getUser, getAccess, getRefresh,
+        apiCall, saveTokens, clearTokens, decodePayload,
+    };
 })();

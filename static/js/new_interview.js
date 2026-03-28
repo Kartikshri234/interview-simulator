@@ -1,5 +1,5 @@
 (function () {
-    const form      = document.getElementById('new-interview-form');
+    const form = document.getElementById('new-interview-form');
     if (!form) return;
 
     const statusEl  = document.getElementById('new-interview-status');
@@ -7,9 +7,6 @@
 
     /* ──────────────────────────────────────────────────
        Feature 8 — Adaptive difficulty suggestion
-       When a category radio is selected, fetch the
-       suggested difficulty from the API and show a
-       hint badge the user can apply with one click.
     ────────────────────────────────────────────────── */
     const adaptiveHint  = document.getElementById('adaptive-hint');
     const adaptiveText  = document.getElementById('adaptive-hint-text');
@@ -18,19 +15,21 @@
     let   suggestedDiff = null;
 
     async function fetchAdaptive(category) {
-        if (!window.Auth || !window.Auth.isAuthenticated()) return;
-        if (!adaptiveHint) return;
+        if (!adaptiveHint || !window.Auth) return;
         try {
-            const res  = await window.Auth.apiCall('/api/interview/adaptive-difficulty/?category=' + encodeURIComponent(category));
+            const res  = await window.Auth.apiCall(
+                '/api/interview/adaptive-difficulty/?category=' + encodeURIComponent(category)
+            );
             if (!res.ok) return;
             const data = await res.json();
             suggestedDiff = data.suggested_difficulty;
             if (adaptiveText) adaptiveText.textContent = data.reason || '';
             adaptiveHint.hidden = false;
-        } catch { /* silently skip */ }
+        } catch(e) {
+            // silently skip — not critical
+        }
     }
 
-    // Listen for category radio changes
     form.querySelectorAll('input[name="category"]').forEach(function(radio) {
         radio.addEventListener('change', function() {
             if (adaptiveHint) adaptiveHint.hidden = true;
@@ -38,7 +37,6 @@
         });
     });
 
-    // Apply suggestion button
     if (adaptiveApply) {
         adaptiveApply.addEventListener('click', function() {
             if (suggestedDiff && diffSelect) {
@@ -53,22 +51,30 @@
         });
     }
 
-    // Fetch on page load for the already-checked category
+    // Fetch adaptive hint on page load
     var checkedCat = form.querySelector('input[name="category"]:checked');
     if (checkedCat) fetchAdaptive(checkedCat.value);
 
+    /* ── Form submit — create session via API ── */
     form.addEventListener('submit', async function (event) {
         event.preventDefault();
-        submitBtn.disabled  = true;
-        statusEl.textContent = 'Creating session...';
+
+        // Check authentication
+        if (!window.Auth) {
+            statusEl.textContent = 'Auth system not loaded. Please refresh.';
+            return;
+        }
+
+        submitBtn.disabled   = true;
+        statusEl.textContent = 'Creating session…';
 
         const formData = new FormData(form);
         const payload  = {
             title:           (formData.get('title') || '').toString().trim(),
             category:        formData.get('category') || 'python',
             difficulty:      formData.get('difficulty') || 'medium',
-            total_questions: Number(formData.get('total_questions') || 5),
-            session_type:    formData.get('session_type') || 'standard',  // Feature 13
+            total_questions: parseInt(formData.get('total_questions') || '5', 10),
+            session_type:    formData.get('session_type') || 'standard',
         };
 
         try {
@@ -78,20 +84,25 @@
             });
 
             if (!response.ok) {
-                const data   = await response.json().catch(() => ({}));
-                const reason = data.detail || data.error || 'Unable to create session.';
+                let reason = 'Unable to create session.';
+                try {
+                    const errData = await response.json();
+                    reason = errData.detail || errData.error
+                        || Object.values(errData).flat().join(' ')
+                        || reason;
+                } catch (_) {}
                 throw new Error(reason);
             }
 
             const data = await response.json();
             const id   = data.id || data.pk;
-            if (!id) throw new Error('Session created but id is missing in response.');
+            if (!id) throw new Error('Session created but ID is missing in response.');
 
-            statusEl.textContent = 'Session created. Redirecting...';
+            statusEl.textContent = 'Session created! Redirecting…';
             window.location.href = '/interview/' + id + '/';
 
         } catch (error) {
-            statusEl.textContent = error.message || 'Something went wrong while creating session.';
+            statusEl.textContent = error.message || 'Something went wrong. Please try again.';
             submitBtn.disabled   = false;
         }
     });
