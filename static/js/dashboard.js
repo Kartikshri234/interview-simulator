@@ -15,8 +15,21 @@
             const decimals = Number.parseInt(counter.dataset.decimals || '0', 10);
 
             if (Number.isNaN(target)) return;
+            // Use a dedicated text node so the inner <span> (e.g. "/10") is not clobbered
+            var textNode = null;
+            for (var i = 0; i < counter.childNodes.length; i++) {
+                if (counter.childNodes[i].nodeType === Node.TEXT_NODE) {
+                    textNode = counter.childNodes[i];
+                    break;
+                }
+            }
+            if (!textNode) {
+                textNode = document.createTextNode('');
+                counter.insertBefore(textNode, counter.firstChild);
+            }
+
             if (reduceMotion) {
-                counter.firstChild.textContent = target.toFixed(decimals);
+                textNode.textContent = target.toFixed(decimals);
                 return;
             }
 
@@ -27,7 +40,7 @@
                 const progress = clamp((now - startTime) / duration, 0, 1);
                 const eased = 1 - Math.pow(1 - progress, 3);
                 const current = target * eased;
-                counter.firstChild.textContent = current.toFixed(decimals);
+                textNode.textContent = current.toFixed(decimals);
                 if (progress < 1) requestAnimationFrame(tick);
             }
 

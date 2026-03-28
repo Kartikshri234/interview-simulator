@@ -37,6 +37,7 @@
     }
 
     function updateTimerUI(remaining, total) {
+        if (!timerWrap || !timerDisplay || !timerRingFill || !timerProgress || !timerBadge) return;
         const pct  = total > 0 ? remaining / total : 1;
         const used = 1 - pct;
 
@@ -57,6 +58,7 @@
     }
 
     function startTimer(seconds) {
+        if (!timerWrap) return;
         stopTimer();
         _timerTotal     = seconds;
         _timerRemaining = seconds;
@@ -121,9 +123,9 @@
         idealToggle.hidden = true;
     }
 
-    idealClose.addEventListener('click', hideIdealPanel);
-    idealToggle.addEventListener('click', function() {
-        if (!idealPanel.hidden) { hideIdealPanel(); } else { idealPanel.hidden = false; idealToggle.textContent = 'Hide ideal answer'; }
+    if (idealClose) idealClose.addEventListener('click', hideIdealPanel);
+    if (idealToggle) idealToggle.addEventListener('click', function() {
+        if (!idealPanel.hidden) { hideIdealPanel(); } else { idealPanel.hidden = false; if (idealToggle) idealToggle.textContent = 'Hide ideal answer'; }
     });
 
     /* ──────────────────────────────────────────────────

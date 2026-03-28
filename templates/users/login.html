@@ -89,18 +89,12 @@
 
         // Call the JWT token endpoint — always send as 'email' field
         // (our backend resolver handles both username and email inputs)
+        // Store JWT tokens in background (best effort), then let Django session form submit
         if (window.Auth) {
-            try {
-                await window.Auth.login(identifier, password);
-            } catch (err) {
-                errorEl.textContent = err.message || 'Invalid username/email or password.';
-                btn.disabled    = false;
-                btn.textContent = 'Sign in →';
-                return;
-            }
+            try { await window.Auth.login(identifier, password); } catch { /* ignore — Django session handles auth */ }
         }
 
-        // Submit the Django session form using the identifier field
+        // Submit the Django session form to create the server-side session
         form.submit();
     });
 })();
