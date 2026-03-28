@@ -22,16 +22,12 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
-# Virtual environments
 venv/
 ENV/
 env/
 .venv
 pip-log.txt
 pip-delete-this-directory.txt
-
-# Django
 *.log
 local_settings.py
 db.sqlite3
@@ -42,7 +38,6 @@ db.sqlite3-journal
 .env.local
 .env.*.local
 
-# IDE
 .vscode/
 .idea/
 *.swp
@@ -54,21 +49,15 @@ db.sqlite3-journal
 *.sublime-project
 *.sublime-workspace
 
-# OS
 Thumbs.db
 desktop.ini
 
-# Node (if used)
 node_modules/
 npm-debug.log
 yarn-error.log
-
-# Testing
 .pytest_cache/
 .coverage
 htmlcov/
-
-# Misc
 .cache/
 *.bak
 *.tmp
