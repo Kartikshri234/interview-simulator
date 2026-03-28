@@ -18,7 +18,9 @@ from .ai_services import (
 from .models import BookmarkedQuestion, InterviewAnswer, InterviewSession
 
 
-# In-memory runtime state for active sessions (sufficient for local/dev usage).
+# In-memory runtime state for active sessions.
+# NOTE: This resets on every server restart/deploy. Sessions mid-flight
+# during a redeploy will regenerate questions from scratch on next API call.
 SESSION_RUNTIME_STATE = {}
 
 ALL_CATEGORIES = [
@@ -69,7 +71,6 @@ def _ensure_runtime_state(session: InterviewSession):
 
     count = max(1, int(session.total_questions or 5))
 
-    # ── Feature 13: Full mock interview mode ────────────────────
     if session.session_type == 'mock':
         categories = ALL_CATEGORIES.copy()
         random.shuffle(categories)
@@ -89,7 +90,11 @@ def _ensure_runtime_state(session: InterviewSession):
         if not questions:
             questions = generate_questions("python", "medium", count)
 
-    state = {"questions": questions, "index": 0}
+    # Determine current index from already-answered questions
+    answered_count = InterviewAnswer.objects.filter(session=session).count()
+    index = min(answered_count, len(questions))
+
+    state = {"questions": questions, "index": index}
     SESSION_RUNTIME_STATE[session.pk] = state
     return state
 
@@ -144,12 +149,10 @@ def _finalize_session(session: InterviewSession):
     session.readiness = summary.get("readiness", "")
     session.save()
 
-    # ── Feature 12: Adaptive difficulty update on user ──────────
     _update_streak(session.user)
 
 
 def _update_streak(user):
-    """Feature 16: Update daily streak on session completion."""
     try:
         user.update_streak()
     except Exception:
@@ -173,7 +176,7 @@ class StartSessionView(APIView):
         idx = state.get("index", 0)
         questions = state.get("questions", [])
         if idx >= len(questions):
-            return Response({"question": "No questions available."})
+            return Response({"detail": "No questions available.", "question": ""}, status=400)
 
         q = questions[idx]
         return Response({
@@ -190,7 +193,8 @@ class EndSessionView(APIView):
 
     def post(self, request, pk):
         session = get_object_or_404(InterviewSession, pk=pk, user=request.user)
-        _finalize_session(session)
+        if session.status != "completed":
+            _finalize_session(session)
         SESSION_RUNTIME_STATE.pop(session.pk, None)
         return Response({"detail": "Session ended.", "status": session.status})
 
@@ -210,6 +214,7 @@ class SubmitAnswerView(APIView):
         state = _ensure_runtime_state(session)
         idx = state.get("index", 0)
         questions = state.get("questions", [])
+
         if idx >= len(questions):
             _finalize_session(session)
             SESSION_RUNTIME_STATE.pop(session.pk, None)
@@ -222,8 +227,6 @@ class SubmitAnswerView(APIView):
 
         eval_data = evaluate_answer(question_text, answer_text, expected_keywords)
         sentiment = analyze_sentiment(answer_text)
-
-        # ── Feature 15: Voice analytics on text answer ──────────
         voice_data = analyze_voice(answer_text)
 
         InterviewAnswer.objects.create(
@@ -241,25 +244,28 @@ class SubmitAnswerView(APIView):
         )
 
         state["index"] = idx + 1
+
+        # Always include ideal answer and keywords in every response
+        base_response = {
+            "ideal_answer_outline": ideal_outline,
+            "expected_keywords": expected_keywords,
+            "score": eval_data.get("score") or 0,
+            "ai_feedback": eval_data.get("ai_feedback") or "",
+        }
+
         if state["index"] >= len(questions):
             _finalize_session(session)
             SESSION_RUNTIME_STATE.pop(session.pk, None)
-            return Response({
-                "completed": True,
-                "ideal_answer_outline": ideal_outline,
-                "expected_keywords": expected_keywords,
-            })
+            return Response({**base_response, "completed": True})
 
         next_q = questions[state["index"]]
-        next_question = next_q.get("question_text", "")
         return Response({
+            **base_response,
             "completed": False,
-            "next_question": next_question,
+            "next_question": next_q.get("question_text", ""),
             "index": state["index"] + 1,
             "total": len(questions),
             "time_limit_seconds": next_q.get("time_limit_seconds", 120),
-            "ideal_answer_outline": ideal_outline,
-            "expected_keywords": expected_keywords,
         })
 
 
@@ -286,18 +292,18 @@ class SubmitVoiceView(APIView):
         transcribed = transcribe_audio(answer.audio_file.path)
         eval_data   = evaluate_answer(question_text, transcribed, expected_keywords)
         sentiment   = analyze_sentiment(transcribed)
-        voice_data  = analyze_voice(transcribed)  # Feature 15
+        voice_data  = analyze_voice(transcribed)
 
-        answer.transcribed_text      = transcribed
-        answer.answer_text           = transcribed
-        answer.score                 = eval_data.get("score") or 0
-        answer.confidence_score      = eval_data.get("confidence_score") or sentiment.get("confidence_score") or 0
-        answer.sentiment             = sentiment.get("sentiment") or "neutral"
-        answer.sentiment_score       = sentiment.get("score") or 0
-        answer.keywords_matched      = eval_data.get("keywords_matched") or []
-        answer.ai_feedback           = eval_data.get("ai_feedback") or ""
+        answer.transcribed_text        = transcribed
+        answer.answer_text             = transcribed
+        answer.score                   = eval_data.get("score") or 0
+        answer.confidence_score        = eval_data.get("confidence_score") or sentiment.get("confidence_score") or 0
+        answer.sentiment               = sentiment.get("sentiment") or "neutral"
+        answer.sentiment_score         = sentiment.get("score") or 0
+        answer.keywords_matched        = eval_data.get("keywords_matched") or []
+        answer.ai_feedback             = eval_data.get("ai_feedback") or ""
         answer.improvement_suggestions = eval_data.get("improvement_suggestions") or ""
-        answer.voice_analytics       = voice_data
+        answer.voice_analytics         = voice_data
         answer.save()
 
         return Response({
@@ -324,8 +330,7 @@ class FacialAnalysisView(APIView):
 
         result = analyze_face_base64(image_b64)
         answer.face_emotions = result.get("emotions") or {}
-        answer.confidence_score = answer.confidence_score or 0
-        answer.save(update_fields=["face_emotions", "confidence_score"])
+        answer.save(update_fields=["face_emotions"])
 
         return Response({
             "dominant_emotion": result.get("dominant_emotion", "neutral"),
@@ -333,7 +338,7 @@ class FacialAnalysisView(APIView):
         })
 
 
-# ── Feature 7: Bookmark endpoints ───────────────────────────────────────────
+# ── Feature 7: Bookmark endpoints ──────────────────────────────
 
 class BookmarkListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -385,7 +390,7 @@ class BookmarkDeleteView(APIView):
         return Response({"detail": "Bookmark removed."})
 
 
-# ── Feature 11: Smart topic recommendation ──────────────────────────────────
+# ── Feature 11: Smart topic recommendation ─────────────────────
 
 class RecommendationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -413,7 +418,7 @@ class RecommendationView(APIView):
         })
 
 
-# ── Feature 12: Adaptive difficulty suggestion ──────────────────────────────
+# ── Feature 12: Adaptive difficulty suggestion ─────────────────
 
 class AdaptiveDifficultyView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -439,7 +444,7 @@ class AdaptiveDifficultyView(APIView):
         return Response({'category': category, 'suggested_difficulty': suggested, 'avg_score': round(avg, 1), 'reason': reason})
 
 
-# ── Feature 16: Streak info ──────────────────────────────────────────────────
+# ── Feature 16: Streak info ─────────────────────────────────────
 
 class StreakView(APIView):
     permission_classes = [permissions.IsAuthenticated]

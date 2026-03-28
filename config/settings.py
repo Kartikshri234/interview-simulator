@@ -2,10 +2,14 @@
 Django Settings — AI Interview Simulator
 """
 import os
-import dj_database_url
 from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
+
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
 
 load_dotenv()
 
@@ -78,7 +82,11 @@ _SQLITE_DB = {
     'NAME': BASE_DIR / 'db.sqlite3',
 }
 
-if _DATABASE_URL and (_DATABASE_URL.startswith('postgres') or _DATABASE_URL.startswith('postgresql')):
+if (
+    dj_database_url is not None
+    and _DATABASE_URL
+    and (_DATABASE_URL.startswith('postgres') or _DATABASE_URL.startswith('postgresql'))
+):
     try:
         _parsed = dj_database_url.parse(_DATABASE_URL, conn_max_age=600)
         if _parsed and _parsed.get('NAME'):

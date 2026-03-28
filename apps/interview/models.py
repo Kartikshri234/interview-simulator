@@ -53,7 +53,7 @@ class InterviewSession(models.Model):
     feedback_summary = models.TextField(blank=True)
     improvement_tips = models.JSONField(default=list)
     strengths        = models.JSONField(default=list)
-    recommended_topics = models.JSONField(default=list)   # Feature 11
+    recommended_topics = models.JSONField(default=list)
     readiness        = models.CharField(max_length=30, blank=True)
     started_at       = models.DateTimeField(null=True, blank=True)
     ended_at         = models.DateTimeField(null=True, blank=True)
@@ -81,7 +81,8 @@ class InterviewSession(models.Model):
 
 class InterviewAnswer(models.Model):
     session               = models.ForeignKey(InterviewSession, on_delete=models.CASCADE, related_name='answers')
-    question              = models.ForeignKey(QuestionBank, on_delete=models.SET_NULL, null=True)
+    # question FK is optional — AI-generated questions don't live in QuestionBank
+    question              = models.ForeignKey(QuestionBank, on_delete=models.SET_NULL, null=True, blank=True)
     question_text         = models.TextField()
     answer_text           = models.TextField(blank=True)
     audio_file            = models.FileField(upload_to='audio/', null=True, blank=True)
@@ -94,7 +95,7 @@ class InterviewAnswer(models.Model):
     ai_feedback           = models.TextField(blank=True)
     improvement_suggestions = models.TextField(blank=True)
     face_emotions         = models.JSONField(default=dict)
-    voice_analytics       = models.JSONField(default=dict)   # Feature 15: wpm, filler_count, filler_words
+    voice_analytics       = models.JSONField(default=dict)
     time_taken_seconds    = models.IntegerField(default=0)
     answered_at           = models.DateTimeField(auto_now_add=True)
 
