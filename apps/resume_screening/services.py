@@ -7,7 +7,7 @@ import os
 from typing import Any, cast
 
 import anthropic
-import fitz          # PyMuPDF
+import pymupdf as fitz   # replaces PyMuPDF (same API, pre-built wheels)
 import docx as python_docx
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
