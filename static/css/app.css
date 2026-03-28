@@ -216,6 +216,7 @@ body {
   transition: color 0.15s, background 0.15s;
 }
 .nav-links a:hover { color: var(--primary); background: var(--primary-dim); }
+.nav-links a.nav-active { color: var(--primary); background: var(--primary-dim); font-weight: 600; }
 
 .btn-link {
   background: var(--primary) !important;

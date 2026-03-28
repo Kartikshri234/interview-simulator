@@ -136,6 +136,22 @@
     </div>
   </section>
 
+  <!-- Resume Screening CTA -->
+  <section class="card section-pad reveal" style="border-color:rgba(79,70,229,0.3);background:var(--primary-dim);">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="font-size:28px;">📄</div>
+      <div style="flex:1;">
+        <h3 style="margin:0 0 4px;">AI Resume Screening</h3>
+        <p style="margin:0;color:var(--text-2);">
+          Paste a job description, upload candidate resumes — get ranked similarity scores and Claude AI deep analysis instantly.
+        </p>
+      </div>
+      <a class="button" href="{% url 'resume_screening' %}">
+        Screen resumes →
+      </a>
+    </div>
+  </section>
+
   <!-- Feature 4: Progress Charts by Topic -->
   <section class="card section-pad reveal" id="dash-charts" data-chart='{{ chart_data|escapejs }}'>
     <div class="dash-charts-head">

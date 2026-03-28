@@ -1,4 +1,9 @@
 Django==4.2.7
+anthropic
+PyMuPDF
+python-docx
+scikit-learn
+werkzeug
 djangorestframework==3.14.0
 django-cors-headers==4.3.1
 djangorestframework-simplejwt==5.3.0

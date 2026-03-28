@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     # Local
     'apps.users',
     'apps.interview',
+    'apps.resume_screening',
 ]
 
 # ── Middleware ────────────────────────────────────────────────

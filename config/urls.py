@@ -19,5 +19,6 @@ urlpatterns = [
     # Django HTML pages
     path('', include('apps.users.urls')),
     path('', include('apps.interview.urls')),
+    path('', include('apps.resume_screening.urls')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

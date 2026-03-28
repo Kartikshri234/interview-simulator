@@ -25,6 +25,7 @@
         <a href="{% url 'dashboard' %}">Dashboard</a>
         <a href="{% url 'new_interview' %}">New Session</a>
         <a href="{% url 'history' %}">History</a>
+        <a href="{% url 'resume_screening' %}" {% if request.resolver_match.url_name == 'resume_screening' %}class="nav-active"{% endif %}>Resume Screening</a>
         <a href="{% url 'bookmarks' %}">Bookmarks</a>
         <a href="{% url 'profile' %}">Profile</a>
         <a href="{% url 'logout' %}"
