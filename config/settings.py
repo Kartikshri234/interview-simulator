@@ -14,7 +14,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ── Security ─────────────────────────────────────────────────
 SECRET_KEY    = os.getenv('SECRET_KEY', 'django-insecure-replace-this-key')
 DEBUG         = os.getenv('DEBUG', 'False') == 'True'
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '*').split(',')
+
+# On Render ALLOWED_HOSTS must include the .onrender.com domain
+_raw_hosts = os.getenv('ALLOWED_HOSTS', '')
+if _raw_hosts.strip():
+    ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
+else:
+    ALLOWED_HOSTS = ['*']
 
 # ── Apps ─────────────────────────────────────────────────────
 INSTALLED_APPS = [
@@ -141,15 +147,16 @@ SIMPLE_JWT = {
 }
 
 # ── CORS ─────────────────────────────────────────────────────
-CORS_ALLOWED_ORIGINS = os.getenv(
-    'CORS_ALLOWED_ORIGINS',
-    'http://localhost:8000,http://127.0.0.1:8000'
-).split(',')
+_cors_raw = os.getenv('CORS_ALLOWED_ORIGINS', '').strip()
+if _cors_raw:
+    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_raw.split(',') if o.strip()]
+else:
+    CORS_ALLOWED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
 CORS_ALLOW_CREDENTIALS = True
 
 # ── Static & Media ───────────────────────────────────────────
-STATIC_URL       = '/static/'
-STATIC_ROOT      = BASE_DIR / 'staticfiles'
+STATIC_URL  = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
@@ -184,3 +191,13 @@ USE_I18N      = True
 USE_TZ        = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ── Security headers (production) ────────────────────────────
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER     = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT         = False   # Render handles HTTPS termination
+    SESSION_COOKIE_SECURE       = True
+    CSRF_COOKIE_SECURE          = True
+    CSRF_TRUSTED_ORIGINS        = [
+        f"https://{h}" for h in ALLOWED_HOSTS if not h.startswith('*')
+    ]
