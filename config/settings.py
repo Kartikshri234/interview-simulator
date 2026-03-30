@@ -153,6 +153,7 @@ if _cors_raw:
 else:
     CORS_ALLOWED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = not bool(_cors_raw)  # Allow all in dev if not explicitly set
 
 # ── Static & Media ───────────────────────────────────────────
 STATIC_URL  = '/static/'
@@ -194,10 +195,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ── Security headers (production) ────────────────────────────
 if not DEBUG:
-    SECURE_PROXY_SSL_HEADER     = ('HTTP_X_FORWARDED_PROTO', 'https')
-    SECURE_SSL_REDIRECT         = False   # Render handles HTTPS termination
-    SESSION_COOKIE_SECURE       = True
-    CSRF_COOKIE_SECURE          = True
-    CSRF_TRUSTED_ORIGINS        = [
-        f"https://{h}" for h in ALLOWED_HOSTS if not h.startswith('*')
-    ]
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT     = False   # Render handles HTTPS termination
+    SESSION_COOKIE_SECURE   = True
+    CSRF_COOKIE_SECURE      = True
+
+    # Build CSRF_TRUSTED_ORIGINS from ALLOWED_HOSTS (skip wildcards)
+    _csrf_hosts = [h for h in ALLOWED_HOSTS if h and not h.startswith('*')]
+    CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in _csrf_hosts]
+
+    # Also honour an explicit env-var override (comma-separated URLs)
+    _csrf_env = os.getenv('CSRF_TRUSTED_ORIGINS', '').strip()
+    if _csrf_env:
+        CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_env.split(',') if o.strip()]
+
+    # Safety net: if nothing resolved, trust the Render domain pattern
+    if not CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com']

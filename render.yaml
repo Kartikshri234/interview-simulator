@@ -12,6 +12,10 @@ services:
         value: "False"
       - key: ALLOWED_HOSTS
         value: "interview-simulator.onrender.com"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://interview-simulator.onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://interview-simulator.onrender.com"
       - key: PYTHON_VERSION
         value: "3.11.9"
       - key: DATABASE_URL
@@ -24,13 +28,13 @@ services:
           type: redis
           property: connectionString
 
+  - type: redis
+    name: interview-simulator-redis
+    plan: free
+    ipAllowList: []
+
 databases:
   - name: interview-simulator-db
     databaseName: interview_simulator
     user: interview_user
     plan: free
-
-  - name: interview-simulator-redis
-    type: redis
-    plan: free
-    ipAllowList: []
