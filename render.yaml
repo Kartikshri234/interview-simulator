@@ -2,9 +2,8 @@ services:
   - type: web
     name: interview-simulator
     runtime: python
-    pythonVersion: "3.11.9"
     buildCommand: "./build.sh"
-    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 2 --timeout 120"
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 2 --timeout 120"
     envVars:
       - key: SECRET_KEY
         generateValue: true

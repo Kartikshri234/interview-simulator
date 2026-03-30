@@ -2,6 +2,9 @@
 # build.sh — Render build script
 set -o errexit
 
+echo "==> Python version check..."
+python --version
+
 echo "==> Upgrading pip & build tools..."
 pip install --upgrade pip setuptools wheel
 
