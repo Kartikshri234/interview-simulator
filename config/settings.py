@@ -22,6 +22,14 @@ if _raw_hosts.strip():
 else:
     ALLOWED_HOSTS = ['*']
 
+# Always add the Render host pattern as a safety net (handles any subdomain)
+if not DEBUG and 'localhost' not in ' '.join(ALLOWED_HOSTS):
+    # Ensure the wildcard onrender pattern is always present in production
+    # so a wrong env var value never causes a 400 DisallowedHost error
+    _onrender_wildcard = '.onrender.com'
+    if not any(_onrender_wildcard in h or h == '*' for h in ALLOWED_HOSTS):
+        ALLOWED_HOSTS.append(_onrender_wildcard)
+
 # ── Apps ─────────────────────────────────────────────────────
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -209,6 +217,6 @@ if not DEBUG:
     if _csrf_env:
         CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_env.split(',') if o.strip()]
 
-    # Safety net: if nothing resolved, trust the Render domain pattern
-    if not CSRF_TRUSTED_ORIGINS:
-        CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com']
+    # Safety net: always include the wildcard Render pattern
+    if not any('onrender.com' in o for o in CSRF_TRUSTED_ORIGINS):
+        CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')

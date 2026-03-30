@@ -11,11 +11,11 @@ services:
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: "interview-simulator.onrender.com"
+        value: "interview-simulator-tr1a.onrender.com"
       - key: CORS_ALLOWED_ORIGINS
-        value: "https://interview-simulator.onrender.com"
+        value: "https://interview-simulator-tr1a.onrender.com"
       - key: CSRF_TRUSTED_ORIGINS
-        value: "https://interview-simulator.onrender.com"
+        value: "https://interview-simulator-tr1a.onrender.com"
       - key: PYTHON_VERSION
         value: "3.11.9"
       - key: DATABASE_URL
