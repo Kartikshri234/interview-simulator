@@ -1,63 +1,56 @@
-# Python
+# ── Python ────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
-*$py.class
+*.pyo
+*.pyd
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
 *.egg
-MANIFEST
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Virtual environments ──────────────────────────────────────
 venv/
-ENV/
+.venv/
 env/
-.venv
-pip-log.txt
-pip-delete-this-directory.txt
+ENV/
+
+# ── Django ────────────────────────────────────────────────────
 *.log
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-/media
-/staticfiles
+
+# Runtime-generated folders (never commit these)
+/staticfiles/
+/media/
+/resume_uploads/
+
+# ── Environment secrets ───────────────────────────────────────
 .env
 .env.local
 .env.*.local
 
+# ── IDE / Editor ──────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
-.AppleDouble
-.LSOverride
-*.sublime-project
-*.sublime-workspace
 
+# ── OS ────────────────────────────────────────────────────────
+.DS_Store
 Thumbs.db
 desktop.ini
 
-node_modules/
-npm-debug.log
-yarn-error.log
+# ── Testing ───────────────────────────────────────────────────
 .pytest_cache/
 .coverage
 htmlcov/
 .cache/
+
+# ── Misc ──────────────────────────────────────────────────────
 *.bak
 *.tmp
+node_modules/

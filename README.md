@@ -1,250 +1,172 @@
 # 🎯 AI Interview Simulator
 
-> A full-stack mock interview platform powered by OpenAI. Practice technical and behavioral interviews with real-time AI feedback, facial emotion analysis, speech recognition, and detailed scoring.
-
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)
-![Django](https://img.shields.io/badge/Django-4.2-092E20?style=flat-square&logo=django&logoColor=white)
-![DRF](https://img.shields.io/badge/DRF-3.14-red?style=flat-square)
-![OpenAI](https://img.shields.io/badge/OpenAI-API-412991?style=flat-square&logo=openai&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-WebSockets-DC382D?style=flat-square&logo=redis&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+A full-stack Django application that helps candidates practise technical interviews with AI-powered question generation, answer evaluation, resume screening, and performance analytics.
 
 ---
 
-## ✨ Features
-
-| Feature | Description |
-|---|---|
-| 🤖 **AI-Generated Questions** | OpenAI generates dynamic questions across 9 categories; falls back to static questions without a key |
-| 📊 **Answer Evaluation** | Keyword matching, sentiment scoring, and AI feedback scored out of 10 |
-| 🎙️ **Speech Recognition** | Answer by voice — SpeechRecognition transcribes audio automatically |
-| 😐 **Facial Emotion Analysis** | DeepFace + OpenCV detect emotions in real time via webcam |
-| 💬 **Sentiment Analysis** | TextBlob scores the positivity and confidence in every answer |
-| ⚡ **Real-time WebSockets** | Live interview room built on Django Channels + Redis |
-| 🔐 **JWT Authentication** | Email-based login with 2-hour access tokens and 7-day refresh tokens |
-| 👤 **Custom User Profiles** | Set target role, experience level (Junior / Mid / Senior), and avatar |
-| 📈 **Session Dashboard** | Track scores, readiness, strengths, and improvement tips across all sessions |
-
----
-
-## 🗂️ Project Structure
+## 📁 Project Structure
 
 ```
 interview_simulator/
 ├── apps/
-│   ├── interview/          # Core interview logic
-│   │   ├── models.py       # QuestionBank, InterviewSession, InterviewAnswer, FacialSnapshot
-│   │   ├── views.py        # Dashboard, interview room, results, history
-│   │   ├── api_urls.py     # REST API routes
-│   │   └── ai_services.py  # OpenAI + DeepFace + SpeechRecognition integrations
-│   └── users/              # Custom user management
-│       ├── models.py       # CustomUser (email login, avatar, target role)
-│       ├── api_views.py    # User registration, profile API
-│       └── api_urls.py     # User API routes
-├── config/
-│   ├── settings.py         # Project settings
-│   ├── urls.py             # Root URL config
-│   ├── asgi.py             # ASGI (WebSocket) entry point
-│   └── wsgi.py             # WSGI entry point
-├── templates/
-│   ├── interview/          # Interview HTML templates
-│   └── users/              # Auth & profile templates
-├── static/                 # CSS, JS assets
-├── media/                  # Uploaded audio, snapshots, avatars
+│   ├── interview/           # Core interview engine
+│   │   ├── models.py        # InterviewSession, InterviewAnswer, QuestionBank, BookmarkedQuestion
+│   │   ├── views.py         # HTML page views (dashboard, room, results, history, bookmarks)
+│   │   ├── api_views.py     # REST API views (session CRUD, submit answer, voice, facial)
+│   │   ├── ai_services.py   # OpenAI: question generation, evaluation, summary; TextBlob sentiment
+│   │   ├── urls.py          # HTML URL patterns
+│   │   ├── api_urls.py      # REST API URL patterns
+│   │   ├── routing.py       # Django Channels WebSocket routing
+│   │   └── migrations/      # Database migrations
+│   │
+│   ├── users/               # Authentication & profiles
+│   │   ├── models.py        # CustomUser (email login, daily streak)
+│   │   ├── views.py         # HTML login, register, logout, profile
+│   │   ├── api_views.py     # REST register, profile, logout, change-password, stats
+│   │   ├── jwt_utils.py     # Custom JWT serializer (username OR email login)
+│   │   ├── admin.py         # Django admin registration
+│   │   ├── urls.py          # HTML URL patterns
+│   │   ├── api_urls.py      # REST API URL patterns
+│   │   └── migrations/      # Database migrations
+│   │
+│   └── resume_screening/    # AI resume screening
+│       ├── views.py         # Upload form + results view
+│       ├── services.py      # PDF/DOCX text extraction, TF-IDF similarity, Claude AI analysis
+│       ├── urls.py          # URL patterns
+│       └── migrations/      # Database migrations (empty — no models)
+│
+├── config/                  # Django project configuration
+│   ├── settings.py          # All settings (reads from .env)
+│   ├── urls.py              # Root URL configuration
+│   ├── asgi.py              # ASGI + Channels setup
+│   └── wsgi.py              # WSGI for production
+│
+├── templates/               # Django HTML templates
+│   ├── base.html
+│   ├── interview/           # dashboard, room, results, history, bookmarks, new_interview
+│   ├── users/               # login, register, profile
+│   └── resume_screening/    # screening
+│
+├── static/                  # Source static files (committed to Git)
+│   ├── css/                 # app.css, features.css
+│   └── js/                  # dashboard.js, interview_room.js, results.js, …
+│
+├── manage.py
 ├── requirements.txt
-├── .env.example
-└── manage.py
+├── build.sh                 # Render.com build script
+├── .env.example             # Copy to .env and fill in secrets
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 🧩 Interview Categories
+## ⚡ Quick Start (Local Development)
 
-| Category | Description |
-|---|---|
-| `python` | Core Python concepts |
-| `django` | Django framework & ORM |
-| `dsa` | Data Structures & Algorithms |
-| `system_design` | Architecture & scalability |
-| `behavioral` | Soft skills & situational questions |
-| `javascript` | JS fundamentals & async |
-| `database` | SQL, indexing, transactions |
-| `devops` | CI/CD, Docker, cloud basics |
-| `ml` | Machine Learning concepts |
-
----
-
-## ⚙️ Setup & Installation
-
-### 1. Navigate to the project folder
-
+### 1. Clone & enter the project
 ```bash
+git clone <your-repo-url>
 cd interview_simulator
 ```
 
 ### 2. Create and activate a virtual environment
-
 ```bash
 python -m venv venv
-
-# Windows — PowerShell
-venv\Scripts\Activate.ps1
-
-# Windows — Command Prompt
-venv\Scripts\activate.bat
-
+# Windows
+venv\Scripts\activate
 # macOS / Linux
 source venv/bin/activate
 ```
 
-Your terminal prompt should now show `(venv)` at the start.
-
 ### 3. Install dependencies
-
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 4. Set up environment variables
-
 ```bash
-# Windows
-copy .env.example .env
-
-# macOS / Linux
 cp .env.example .env
+# Edit .env and fill in your SECRET_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY
 ```
 
-Then edit `.env` with your values:
-
-```env
-SECRET_KEY=your-50-char-django-secret-key
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-OPENAI_API_KEY=sk-your-openai-key-here
-
-REDIS_URL=redis://localhost:6379
-```
-
-> **Generate a SECRET_KEY:**
-> ```bash
-> python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-> ```
-
-### 5. Start Redis (required for WebSockets)
-
-```bash
-# Using Docker (recommended)
-docker run -d -p 6379:6379 redis:7
-```
-
-Or install Redis locally and run `redis-server`.
-
-### 6. Run migrations
-
+### 5. Run migrations
 ```bash
 python manage.py migrate
 ```
 
-### 7. Create an admin account
-
+### 6. Create a superuser (optional — for /admin)
 ```bash
 python manage.py createsuperuser
 ```
 
-### 8. Start the server
+### 7. Collect static files
+```bash
+python manage.py collectstatic --noinput
+```
 
+### 8. Start the development server
 ```bash
 python manage.py runserver
 ```
 
-- **App →** http://127.0.0.1:8000  
-- **Admin →** http://127.0.0.1:8000/admin
+Open http://127.0.0.1:8000 — you're live!
 
 ---
 
-## 🔐 Authentication
+## 🔑 Environment Variables
 
-This project uses **JWT (JSON Web Tokens)** via `djangorestframework-simplejwt`. Login is **email-based**.
-
-- Access tokens expire after **2 hours**
-- Refresh tokens are valid for **7 days**
-
-| Endpoint | Method | Description |
+| Variable | Required | Description |
 |---|---|---|
-| `/api/auth/token/` | `POST` | Obtain access + refresh token |
-| `/api/auth/token/refresh/` | `POST` | Refresh an access token |
-| `/api/users/` | — | User registration & profile |
-| `/api/interview/` | — | Interview session management |
+| `SECRET_KEY` | ✅ | Django secret key (50+ random chars) |
+| `DEBUG` | ✅ | `True` for dev, `False` for production |
+| `ALLOWED_HOSTS` | ✅ | Comma-separated hostnames |
+| `OPENAI_API_KEY` | ⭐ | For AI question generation & evaluation |
+| `ANTHROPIC_API_KEY` | ⭐ | For AI resume screening (Claude) |
+| `DATABASE_URL` | Optional | PostgreSQL URL; defaults to SQLite |
+| `REDIS_URL` | Optional | For WebSocket channels; defaults to in-memory |
+| `CORS_ALLOWED_ORIGINS` | Optional | Comma-separated allowed origins |
 
 ---
 
-## 📊 Scoring System
+## 🚀 Features
 
-Each answer is evaluated across four dimensions:
-
-| Metric | How it works |
+| # | Feature |
 |---|---|
-| **Keyword Match** | How many expected keywords your answer contains |
-| **Sentiment Score** | Positivity & confidence detected by TextBlob |
-| **Confidence Score** | Derived from DeepFace facial emotion data |
-| **AI Feedback Score** | OpenAI evaluation out of 10 |
-
-Session results include an **overall score**, **readiness rating**, **strengths**, and **improvement tips**.
-
----
-
-## 🌐 Pages & Routes
-
-| URL | Description |
-|---|---|
-| `/` | Landing / login redirect |
-| `/dashboard/` | User dashboard with stats & recent sessions |
-| `/interview/new/` | Start a new interview session |
-| `/interview/<id>/` | Live interview room |
-| `/interview/<id>/results/` | Session results & AI feedback |
-| `/history/` | All past interview sessions |
-| `/admin/` | Django admin panel |
+| 1 | AI-generated interview questions (OpenAI GPT-4o-mini) |
+| 2 | Answer evaluation with score, feedback & keyword matching |
+| 3 | Sentiment analysis on answers (TextBlob) |
+| 4 | Progress charts — score trend & topic breakdown |
+| 5 | Session history with detailed per-answer breakdown |
+| 6 | Resume screening — TF-IDF similarity + Claude AI analysis |
+| 7 | Bookmark questions for focused re-practice |
+| 8 | Voice analytics — WPM, filler word detection |
+| 9 | Facial emotion analysis (DeepFace — optional) |
+| 10 | Mock interview mode (mixed categories) |
+| 11 | Smart topic recommendations (based on weak areas) |
+| 12 | Adaptive difficulty suggestions |
+| 13 | Daily streak tracking |
+| 14 | JWT authentication with username OR email login |
 
 ---
 
-## 🤖 AI & Integrations
+## 🏗️ Deployment (Render)
 
-| Library | Purpose |
-|---|---|
-| `openai` | Question generation & answer evaluation |
-| `SpeechRecognition` | Voice-to-text transcription |
-| `textblob` | Sentiment analysis on answers |
-| `deepface` | Facial emotion detection via webcam |
-| `opencv-python` | Webcam frame capture |
-| `channels` + `channels-redis` | Real-time WebSocket interview room |
+The included `build.sh` handles:
+1. Installing all dependencies
+2. Running `collectstatic`
+3. Running `migrate` (only when `DATABASE_URL` is set)
 
-> The app works without an OpenAI key — it falls back to static questions and heuristic scoring.
-
----
-
-## 🗄️ Database
-
-Uses **SQLite** by default (zero configuration). The file `db.sqlite3` is created automatically on first migrate.
-
-To switch to PostgreSQL, update `DATABASES` in `config/settings.py` and install `psycopg2`.
+Set these environment variables in the Render dashboard:
+- `SECRET_KEY`, `DEBUG=False`, `ALLOWED_HOSTS=your-domain.onrender.com`
+- `DATABASE_URL` (PostgreSQL from Render)
+- `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`
 
 ---
 
-## 🧯 Troubleshooting
+## 🛠️ Tech Stack
 
-| Error | Fix |
-|---|---|
-| `No module named 'rest_framework_simplejwt'` | `pip install djangorestframework-simplejwt` |
-| `No module named 'corsheaders'` | `pip install django-cors-headers` |
-| `No module named 'channels'` | `pip install channels channels-redis` |
-| Redis connection refused on port 6379 | `docker run -d -p 6379:6379 redis:7` |
-| PowerShell won't activate venv | Run `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` first |
-| Port 8000 already in use | `python manage.py runserver 8080` |
-
----
-
-## 📄 License
-
-MIT License — free to use, modify, and distribute.
+- **Backend**: Django 4.2, Django REST Framework, SimpleJWT, Django Channels
+- **AI**: OpenAI GPT-4o-mini, Anthropic Claude, TextBlob, DeepFace (optional)
+- **Database**: SQLite (dev) / PostgreSQL (prod)
+- **Static files**: WhiteNoise
+- **Deployment**: Render / gunicorn

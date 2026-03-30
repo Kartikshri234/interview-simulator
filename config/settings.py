@@ -72,8 +72,6 @@ TEMPLATES = [
 
 # ── Auth ─────────────────────────────────────────────────────
 AUTH_USER_MODEL     = 'users.CustomUser'
-
-# FIX: Point Django's login_required redirect to our custom login page
 LOGIN_URL           = '/login/'
 LOGIN_REDIRECT_URL  = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
@@ -94,7 +92,7 @@ _SQLITE_DB = {
     'NAME': BASE_DIR / 'db.sqlite3',
 }
 
-if _DATABASE_URL and (_DATABASE_URL.startswith('postgres') or _DATABASE_URL.startswith('postgresql')):
+if _DATABASE_URL and (_DATABASE_URL.startswith('postgres')):
     try:
         _parsed = dj_database_url.parse(_DATABASE_URL, conn_max_age=600)
         if _parsed and _parsed.get('NAME'):
@@ -176,7 +174,8 @@ else:
     }
 
 # ── AI APIs ──────────────────────────────────────────────────
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
+OPENAI_API_KEY    = os.getenv('OPENAI_API_KEY', '')
+ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')
 
 # ── i18n ─────────────────────────────────────────────────────
 LANGUAGE_CODE = 'en-us'
