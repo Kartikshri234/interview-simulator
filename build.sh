@@ -2,11 +2,10 @@
 # build.sh — Render build script
 set -o errexit
 
-echo "==> Python version check..."
-python --version
+echo "==> Python version: $(python --version)"
 
-echo "==> Upgrading pip & build tools..."
-pip install --upgrade pip setuptools wheel
+echo "==> Upgrading pip..."
+pip install --upgrade pip
 
 echo "==> Installing dependencies..."
 pip install -r requirements.txt

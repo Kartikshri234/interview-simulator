@@ -12,23 +12,20 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ── Security ─────────────────────────────────────────────────
-SECRET_KEY    = os.getenv('SECRET_KEY', 'django-insecure-replace-this-key')
-DEBUG         = os.getenv('DEBUG', 'False') == 'True'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-replace-this-key')
+DEBUG      = os.getenv('DEBUG', 'False') == 'True'
 
-# On Render ALLOWED_HOSTS must include the .onrender.com domain
-_raw_hosts = os.getenv('ALLOWED_HOSTS', '')
-if _raw_hosts.strip():
+# ALLOWED_HOSTS — always include .onrender.com wildcard in production
+_raw_hosts = os.getenv('ALLOWED_HOSTS', '').strip()
+if _raw_hosts:
     ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 else:
     ALLOWED_HOSTS = ['*']
 
-# Always add the Render host pattern as a safety net (handles any subdomain)
-if not DEBUG and 'localhost' not in ' '.join(ALLOWED_HOSTS):
-    # Ensure the wildcard onrender pattern is always present in production
-    # so a wrong env var value never causes a 400 DisallowedHost error
-    _onrender_wildcard = '.onrender.com'
-    if not any(_onrender_wildcard in h or h == '*' for h in ALLOWED_HOSTS):
-        ALLOWED_HOSTS.append(_onrender_wildcard)
+# In production always add the onrender wildcard as safety net
+if not DEBUG:
+    if not any(h in ('*', '.onrender.com') or 'onrender.com' in h for h in ALLOWED_HOSTS):
+        ALLOWED_HOSTS.append('.onrender.com')
 
 # ── Apps ─────────────────────────────────────────────────────
 INSTALLED_APPS = [
@@ -100,13 +97,12 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # ── Database ─────────────────────────────────────────────────
 _DATABASE_URL = os.getenv('DATABASE_URL', '').strip()
-
 _SQLITE_DB = {
     'ENGINE': 'django.db.backends.sqlite3',
     'NAME': BASE_DIR / 'db.sqlite3',
 }
 
-if _DATABASE_URL and (_DATABASE_URL.startswith('postgres')):
+if _DATABASE_URL and _DATABASE_URL.startswith('postgres'):
     try:
         _parsed = dj_database_url.parse(_DATABASE_URL, conn_max_age=600)
         if _parsed and _parsed.get('NAME'):
@@ -140,32 +136,32 @@ REST_FRAMEWORK = {
 
 # ── JWT ──────────────────────────────────────────────────────
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME':  timedelta(minutes=30),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ACCESS_TOKEN_LIFETIME':   timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME':  timedelta(days=7),
     'ROTATE_REFRESH_TOKENS':   True,
     'BLACKLIST_AFTER_ROTATION': True,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_HEADER_NAME':  'HTTP_AUTHORIZATION',
-    'USER_ID_FIELD':     'id',
-    'USER_ID_CLAIM':     'user_id',
+    'ALGORITHM':               'HS256',
+    'SIGNING_KEY':             SECRET_KEY,
+    'AUTH_HEADER_TYPES':       ('Bearer',),
+    'AUTH_HEADER_NAME':        'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD':           'id',
+    'USER_ID_CLAIM':           'user_id',
     'TOKEN_OBTAIN_SERIALIZER': 'apps.users.jwt_utils.CustomTokenObtainPairSerializer',
-    'UPDATE_LAST_LOGIN': True,
+    'UPDATE_LAST_LOGIN':       True,
 }
 
 # ── CORS ─────────────────────────────────────────────────────
 _cors_raw = os.getenv('CORS_ALLOWED_ORIGINS', '').strip()
 if _cors_raw:
-    CORS_ALLOWED_ORIGINS = [o.strip() for o in _cors_raw.split(',') if o.strip()]
+    CORS_ALLOWED_ORIGINS  = [o.strip() for o in _cors_raw.split(',') if o.strip()]
+    CORS_ALLOW_ALL_ORIGINS = False
 else:
-    CORS_ALLOWED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
+    CORS_ALLOW_ALL_ORIGINS = True   # safe for dev; production sets the env var
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = not bool(_cors_raw)  # Allow all in dev if not explicitly set
 
 # ── Static & Media ───────────────────────────────────────────
-STATIC_URL  = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL       = '/static/'
+STATIC_ROOT      = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
@@ -174,12 +170,11 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # ── Channel Layers ───────────────────────────────────────────
 _REDIS_URL = os.getenv('REDIS_URL', '').strip()
-
 if _REDIS_URL:
     CHANNEL_LAYERS = {
         'default': {
             'BACKEND': 'channels_redis.core.RedisChannelLayer',
-            'CONFIG': {'hosts': [_REDIS_URL]},
+            'CONFIG':  {'hosts': [_REDIS_URL]},
         },
     }
 else:
@@ -201,22 +196,22 @@ USE_TZ        = True
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ── Security headers (production) ────────────────────────────
+# ── Production security headers ──────────────────────────────
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT     = False   # Render handles HTTPS termination
     SESSION_COOKIE_SECURE   = True
     CSRF_COOKIE_SECURE      = True
 
-    # Build CSRF_TRUSTED_ORIGINS from ALLOWED_HOSTS (skip wildcards)
-    _csrf_hosts = [h for h in ALLOWED_HOSTS if h and not h.startswith('*')]
-    CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in _csrf_hosts]
+    # CSRF_TRUSTED_ORIGINS — start from non-wildcard ALLOWED_HOSTS
+    _csrf_hosts = [h for h in ALLOWED_HOSTS if h and '*' not in h]
+    CSRF_TRUSTED_ORIGINS = [f'https://{h}' for h in _csrf_hosts]
 
-    # Also honour an explicit env-var override (comma-separated URLs)
+    # Override with explicit env var if provided
     _csrf_env = os.getenv('CSRF_TRUSTED_ORIGINS', '').strip()
     if _csrf_env:
         CSRF_TRUSTED_ORIGINS = [o.strip() for o in _csrf_env.split(',') if o.strip()]
 
-    # Safety net: always include the wildcard Render pattern
+    # Always include onrender.com wildcard so any subdomain is trusted
     if not any('onrender.com' in o for o in CSRF_TRUSTED_ORIGINS):
         CSRF_TRUSTED_ORIGINS.append('https://*.onrender.com')
