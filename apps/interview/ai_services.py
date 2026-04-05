@@ -14,13 +14,24 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-# DeepFace is optional — not available on Render free tier (no tensorflow)
-try:
-    from deepface import DeepFace
-    DEEPFACE_AVAILABLE = True
-except Exception:
-    DeepFace = None
-    DEEPFACE_AVAILABLE = False
+# DeepFace is optional and expensive to import (TensorFlow init), so keep it lazy.
+DeepFace = None
+DEEPFACE_AVAILABLE = None
+
+
+def _get_deepface():
+    """Import DeepFace on first use to avoid slow Django startup."""
+    global DeepFace, DEEPFACE_AVAILABLE
+    if DEEPFACE_AVAILABLE is not None:
+        return DeepFace, DEEPFACE_AVAILABLE
+    try:
+        from deepface import DeepFace as _DeepFace
+        DeepFace = _DeepFace
+        DEEPFACE_AVAILABLE = True
+    except Exception:
+        DeepFace = None
+        DEEPFACE_AVAILABLE = False
+    return DeepFace, DEEPFACE_AVAILABLE
 
 
 # ── 1. QUESTION GENERATION ────────────────────────────────────
@@ -293,7 +304,8 @@ def analyze_face_base64(image_b64: str) -> dict:
     """Run DeepFace on a base64-encoded image.
     Falls back gracefully if DeepFace/TensorFlow is not available (e.g. Render free tier).
     """
-    if not DEEPFACE_AVAILABLE:
+    deepface_cls, deepface_available = _get_deepface()
+    if not deepface_available:
         logger.info('DeepFace not available — returning neutral emotion.')
         return {'dominant_emotion': 'neutral', 'emotions': {'neutral': 100.0}}
     try:
@@ -303,8 +315,8 @@ def analyze_face_base64(image_b64: str) -> dict:
         img       = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as tmp:
             cv2.imwrite(tmp.name, img)
-            result = DeepFace.analyze(tmp.name, actions=['emotion'],
-                                      enforce_detection=False, silent=True)
+            result = deepface_cls.analyze(tmp.name, actions=['emotion'],
+                                          enforce_detection=False, silent=True)
         if isinstance(result, list):
             result = result[0]
         emotions  = result.get('emotion', {})
