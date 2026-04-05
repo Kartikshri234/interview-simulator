@@ -1,6 +1,6 @@
 {% load static %}
 <!doctype html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,7 +8,7 @@
   <title>{% block title %}AI Interview Simulator{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="stylesheet" href="{% static 'css/features.css' %}">
   {% block extra_head %}{% endblock %}
@@ -26,7 +26,7 @@
         <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="nav-active"{% endif %}>Dashboard</a>
         <a href="{% url 'new_interview' %}" {% if request.resolver_match.url_name == 'new_interview' %}class="nav-active"{% endif %}>New Session</a>
         <a href="{% url 'history' %}" {% if request.resolver_match.url_name == 'history' %}class="nav-active"{% endif %}>History</a>
-        <a href="{% url 'resume_screening' %}" {% if request.resolver_match.url_name == 'resume_screening' %}class="nav-active"{% endif %}>Resume Screening</a>
+        <a href="{% url 'resume_screening' %}" {% if request.resolver_match.url_name == 'resume_screening' %}class="nav-active"{% endif %}>Resume AI</a>
         <a href="{% url 'bookmarks' %}" {% if request.resolver_match.url_name == 'bookmarks' %}class="nav-active"{% endif %}>Bookmarks</a>
         <a href="{% url 'profile' %}" {% if request.resolver_match.url_name == 'profile' %}class="nav-active"{% endif %}>Profile</a>
         <button type="button"
@@ -37,10 +37,10 @@
         </button>
       {% else %}
         <a href="{% url 'login' %}">Sign in</a>
-        <a href="{% url 'register' %}" class="btn-link">Get started</a>
+        <a href="{% url 'register' %}" class="btn-link">Get started →</a>
       {% endif %}
 
-      <!-- Settings logo button -->
+      <!-- Settings button -->
       <button class="settings-btn" id="settings-open-btn" title="Settings" aria-label="Open settings">
         <span class="settings-btn-inner">
           <svg class="settings-btn-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -85,24 +85,24 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8"/><path d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 12 21a9.003 9.003 0 0 0 8.354-5.646z"/></svg>
           <h3>Appearance</h3>
         </div>
-        <p class="settings-section-desc">Choose a colour theme for the entire app. Your preference is saved automatically.</p>
+        <p class="settings-section-desc">Choose your visual theme. Your preference is saved automatically.</p>
         <div class="theme-swatches">
-          <div class="theme-swatch">
-            <input type="radio" name="theme" id="theme-light" value="light">
-            <label for="theme-light">
-              <div class="swatch-preview swatch-light">
-                <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
-              </div>
-              Light
-            </label>
-          </div>
           <div class="theme-swatch">
             <input type="radio" name="theme" id="theme-dark" value="dark">
             <label for="theme-dark">
               <div class="swatch-preview swatch-dark">
                 <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
               </div>
-              Dark
+              Void Dark
+            </label>
+          </div>
+          <div class="theme-swatch">
+            <input type="radio" name="theme" id="theme-light" value="light">
+            <label for="theme-light">
+              <div class="swatch-preview swatch-light">
+                <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
+              </div>
+              Soft Light
             </label>
           </div>
           <div class="theme-swatch">
@@ -111,7 +111,7 @@
               <div class="swatch-preview swatch-blue">
                 <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
               </div>
-              Ocean Blue
+              Neon Blue
             </label>
           </div>
           <div class="theme-swatch">
@@ -120,7 +120,7 @@
               <div class="swatch-preview swatch-rose">
                 <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
               </div>
-              Rose
+              Hot Pink
             </label>
           </div>
         </div>
@@ -132,7 +132,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
           <h3>Font Size</h3>
         </div>
-        <p class="settings-section-desc">Adjust the text size across the app. Ranges from 13px (small) to 19px (large).</p>
+        <p class="settings-section-desc">Adjust the base text size across the app.</p>
         <div class="font-size-row">
           <button id="font-decrease" aria-label="Decrease font size">−</button>
           <span class="font-size-label" id="font-size-label">15px</span>
@@ -146,11 +146,11 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           <h3>Preferences</h3>
         </div>
-        <p class="settings-section-desc">Fine-tune the layout and visual behaviour of the interface.</p>
+        <p class="settings-section-desc">Fine-tune layout and visual behaviour.</p>
         <div class="toggle-row">
           <div class="toggle-label">
             <span>Compact mode</span>
-            <small>Tighter padding — fits more content on screen</small>
+            <small>Tighter padding, more content visible</small>
           </div>
           <label class="toggle-switch">
             <input type="checkbox" id="pref-compact">
@@ -160,7 +160,7 @@
         <div class="toggle-row">
           <div class="toggle-label">
             <span>Animations</span>
-            <small>Smooth reveal &amp; transition effects on page load</small>
+            <small>Smooth reveal and transition effects</small>
           </div>
           <label class="toggle-switch">
             <input type="checkbox" id="pref-animations" checked>
@@ -197,7 +197,7 @@
     }
 
     const html = document.documentElement;
-    let currentTheme = get('ui-theme', 'light');
+    let currentTheme = get('ui-theme', 'dark');
 
     function applyTheme(t) {
       currentTheme = t;
@@ -265,11 +265,9 @@
   function doLogout() {
     var btn = document.getElementById('logout-link');
     if (btn) { btn.disabled = true; btn.textContent = 'Logging out…'; }
-    // Step 1: blacklist the JWT refresh token (best effort)
     var refresh = null;
     try { refresh = localStorage.getItem('jwt_refresh'); } catch(e) {}
     try { localStorage.removeItem('jwt_access'); localStorage.removeItem('jwt_refresh'); localStorage.removeItem('jwt_user'); } catch(e) {}
-    // Step 2: always hit Django's /logout/ to destroy the server-side session
     if (refresh) {
       fetch('/api/users/logout/', {
         method: 'POST',

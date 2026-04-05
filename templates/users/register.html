@@ -10,7 +10,7 @@
     </div>
 
     <h1>Create your account</h1>
-    <p class="subtitle">Set your target role and experience level to receive personalized interview sessions tailored to your goals.</p>
+    <p class="subtitle">Set your target role and experience level for personalized interview sessions tailored to where you're headed.</p>
 
     <form method="post" action="{% url 'register' %}">
       {% csrf_token %}
@@ -39,7 +39,7 @@
 
       <div class="grid two">
         <label>
-          Target role <span style="color:var(--text-3);font-size:0.75rem;">(optional)</span>
+          Target role <span style="color:var(--text-3);font-size:0.72rem;font-weight:400;">(optional)</span>
           <input type="text" name="target_role" placeholder="e.g. Backend Engineer">
         </label>
         <label>
@@ -56,7 +56,7 @@
     </form>
 
     <div class="auth-footer">
-      Already have an account? <a href="{% url 'login' %}">Sign in</a>
+      Already have an account? <a href="{% url 'login' %}">Sign in →</a>
     </div>
   </div>
 </div>

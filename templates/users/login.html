@@ -10,7 +10,7 @@
     </div>
 
     <h1>Welcome back</h1>
-    <p class="subtitle">Sign in with your username or email address to continue.</p>
+    <p class="subtitle">Sign in to pick up where you left off. Your progress is waiting.</p>
 
     <div id="login-banner" class="auth-banner" style="display:none;"></div>
 
@@ -51,7 +51,7 @@
     </form>
 
     <div class="auth-footer">
-      No account yet? <a href="{% url 'register' %}">Create one free</a>
+      No account? <a href="{% url 'register' %}">Create one free →</a>
     </div>
   </div>
 </div>
@@ -60,7 +60,6 @@
 {% block extra_js %}
 <script>
 (function () {
-    // Show session-expired banner
     const params = new URLSearchParams(window.location.search);
     if (params.get('reason') === 'expired') {
         const banner = document.getElementById('login-banner');
@@ -88,19 +87,14 @@
         btn.textContent = 'Signing in…';
         errorEl.textContent = '';
 
-        // Step 1: Obtain JWT tokens and store them
         if (window.Auth) {
             try {
                 await window.Auth.login(identifier, password);
             } catch (err) {
-                // JWT login failed — show error but still try Django session login
-                // (might be a JWT-specific issue while Django auth is fine)
                 console.warn('JWT login attempt failed:', err.message);
             }
         }
 
-        // Step 2: Submit the Django form for server-side session
-        // This is the authoritative auth — page redirects on success
         form.submit();
     });
 })();
