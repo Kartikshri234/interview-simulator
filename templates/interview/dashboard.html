@@ -3,168 +3,272 @@
 {% block title %}Dashboard | InterviewAI{% endblock %}
 
 {% block content %}
+<div class="dashboard-layout" id="dashboard-root">
 
-<div class="dashboard-layout">
+  <!-- ══════════════════════════════════════════
+       HERO SECTION — Welcome + Quick Actions
+  ══════════════════════════════════════════ -->
+  <section class="dash-hero card reveal" id="dash-hero-section">
+    <!-- Decorative animated orb -->
+    <div class="hero-orb" aria-hidden="true"></div>
 
-  <!-- Hero -->
-  <section class="card dash-hero reveal">
     <div class="dash-hero-copy">
-      <p class="dash-kicker">Performance cockpit</p>
-      <h1>Welcome back, <span>{{ request.user.username }}</span></h1>
-      <p>Track momentum, review recent attempts, and jump back into interview practice in one place.</p>
-      <div class="actions">
-        <a class="button" href="{% url 'new_interview' %}">Start new interview →</a>
-        <a class="button alt" href="{% url 'history' %}">View full history</a>
-        <a class="button alt" href="{% url 'bookmarks' %}">Bookmarks</a>
+      <div class="dash-hero-greeting">
+        <span class="greeting-badge">
+          <span class="greeting-dot"></span>
+          <span id="greeting-text">Good day</span>
+        </span>
+        <span class="streak-pill" id="hero-streak-pill" title="Daily streak">
+          🔥 <span id="hero-streak-count">{{ streak|default:0 }}</span>d
+        </span>
+      </div>
+      <h1 class="dash-hero-title">
+        Ready to level up,<br>
+        <span class="hero-name">{{ request.user.username }}</span>?
+      </h1>
+      <p class="dash-hero-desc">
+        Your AI-powered interview cockpit. Track every session, spot weak spots, and practice until you're hired.
+      </p>
+      <div class="hero-actions">
+        <a class="button hero-cta-primary" href="{% url 'new_interview' %}">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Start Interview
+        </a>
+        <a class="button alt hero-cta-alt" href="{% url 'history' %}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h6l3 9 4-6h5"/><path d="M21 21H3"/></svg>
+          Full History
+        </a>
+        <a class="button alt hero-cta-alt" href="{% url 'resume_screening' %}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          AI Résumé
+        </a>
       </div>
     </div>
 
-    <div class="dash-hero-panel" data-total="{{ stats.total|default:0 }}" data-completed="{{ stats.completed|default:0 }}">
-      <p class="panel-title">Session momentum</p>
-      <div class="momentum-track" aria-hidden="true">
-        <span class="momentum-fill" id="session-momentum-fill"></span>
+    <!-- Session Momentum Panel -->
+    <div class="momentum-panel">
+      <div class="momentum-ring-wrap">
+        <svg class="momentum-ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="mr-track" cx="60" cy="60" r="50" fill="none" stroke-width="8"/>
+          <circle class="mr-fill" id="momentum-ring-fill" cx="60" cy="60" r="50"
+            fill="none" stroke-width="8" stroke-linecap="round"
+            stroke-dasharray="314" stroke-dashoffset="314"
+            transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="momentum-ring-inner">
+          <span class="mr-pct" id="momentum-pct">0%</span>
+          <span class="mr-label">done</span>
+        </div>
       </div>
-      <p class="panel-sub" id="session-momentum-label">{{ stats.completed|default:0 }} of {{ stats.total|default:0 }} sessions completed</p>
+      <div class="momentum-details">
+        <p class="mp-title">Session momentum</p>
+        <p class="mp-sub" id="momentum-sub">
+          {{ stats.completed|default:0 }} of {{ stats.total|default:0 }} sessions completed
+        </p>
+        <div class="mp-bar-row">
+          <div class="mp-bar-track">
+            <span class="mp-bar-fill" id="mp-bar-fill"
+              data-total="{{ stats.total|default:0 }}"
+              data-completed="{{ stats.completed|default:0 }}"></span>
+          </div>
+        </div>
+        {% if recommendation %}
+        <a class="mp-action" href="{% url 'new_interview' %}?category={{ recommendation.category }}">
+          Practice {{ recommendation.category|title }} →
+        </a>
+        {% else %}
+        <a class="mp-action" href="{% url 'new_interview' %}">
+          Start a session →
+        </a>
+        {% endif %}
+      </div>
     </div>
   </section>
 
-  <!-- KPIs -->
-  <section class="dash-kpi-grid">
-    <article class="card dash-kpi reveal">
-      <p>Total sessions</p>
-      <h3 class="count-up" data-value="{{ stats.total|default:0 }}">{{ stats.total|default:0 }}</h3>
-      <small>all recorded attempts</small>
+  <!-- ══════════════════════════════════════════
+       KPI CARDS — 4-across grid
+  ══════════════════════════════════════════ -->
+  <section class="kpi-grid reveal">
+
+    <article class="kpi-card card" id="kpi-sessions">
+      <div class="kpi-icon kpi-icon--blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-label">Total sessions</p>
+        <h3 class="kpi-value count-up" data-value="{{ stats.total|default:0 }}">{{ stats.total|default:0 }}</h3>
+        <p class="kpi-sub">all attempts</p>
+      </div>
+      <div class="kpi-bar-wrap">
+        <div class="kpi-sparkbar" style="--pct:{{ stats.total|default:0 }}%;background:var(--primary)"></div>
+      </div>
     </article>
-    <article class="card dash-kpi reveal">
-      <p>Completed</p>
-      <h3 class="count-up" data-value="{{ stats.completed|default:0 }}">{{ stats.completed|default:0 }}</h3>
-      <small>finished end-to-end</small>
+
+    <article class="kpi-card card" id="kpi-completed">
+      <div class="kpi-icon kpi-icon--green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-label">Completed</p>
+        <h3 class="kpi-value count-up" data-value="{{ stats.completed|default:0 }}">{{ stats.completed|default:0 }}</h3>
+        <p class="kpi-sub">end-to-end</p>
+      </div>
+      <div class="kpi-bar-wrap">
+        <div class="kpi-sparkbar" style="--pct:{{ stats.completed|default:0 }}%;background:var(--success)"></div>
+      </div>
     </article>
-    <article class="card dash-kpi reveal">
-      <p>Average score</p>
-      <h3 class="count-up" data-value="{{ stats.avg_score|default:0|floatformat:1 }}" data-decimals="1">{{ stats.avg_score|default:0|floatformat:1 }}<span>/10</span></h3>
-      <small>across all sessions</small>
+
+    <article class="kpi-card card" id="kpi-score">
+      <div class="kpi-icon kpi-icon--purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-label">Average score</p>
+        <h3 class="kpi-value count-up" data-value="{{ stats.avg_score|default:0|floatformat:1 }}" data-decimals="1">
+          {{ stats.avg_score|default:0|floatformat:1 }}<span class="kpi-unit">/10</span>
+        </h3>
+        <p class="kpi-sub">all sessions</p>
+      </div>
+      <div class="kpi-bar-wrap">
+        <div class="kpi-sparkbar" style="--pct:{{ stats.avg_score|default:0|floatformat:0 }}0%;background:var(--primary)"></div>
+      </div>
     </article>
-    <!-- Feature 16: Daily streak KPI -->
-    <article class="card dash-kpi reveal streak-kpi">
-      <p>🔥 Daily streak</p>
-      <h3 class="count-up" data-value="{{ streak|default:0 }}">{{ streak|default:0 }}</h3>
-      <small>consecutive days</small>
+
+    <article class="kpi-card card kpi-streak" id="kpi-streak">
+      <div class="kpi-icon kpi-icon--amber">
+        <span style="font-size:1.3rem;line-height:1">🔥</span>
+      </div>
+      <div class="kpi-body">
+        <p class="kpi-label">Daily streak</p>
+        <h3 class="kpi-value count-up" data-value="{{ streak|default:0 }}">{{ streak|default:0 }}<span class="kpi-unit">d</span></h3>
+        <p class="kpi-sub">consecutive days</p>
+      </div>
+      <div class="kpi-bar-wrap">
+        <div class="kpi-sparkbar" style="--pct:{{ streak|default:0 }}0%;background:var(--amber)"></div>
+      </div>
     </article>
+
   </section>
 
-  <!-- Feature 6: Streak + Recommendation cards -->
-  {% if streak or recommendation %}
-  <section class="dash-feature-strip reveal">
-
-    {% if streak %}
-    <div class="feature-strip-card streak-card">
-      <div class="fsc-icon">🔥</div>
-      <div class="fsc-body">
-        <span class="fsc-value">{{ streak }}</span>
-        <span class="fsc-label">day streak</span>
-      </div>
-      <p class="fsc-sub">Keep practising daily to grow it!</p>
-    </div>
-    {% endif %}
+  <!-- ══════════════════════════════════════════
+       QUICK ACTION CARDS ROW
+  ══════════════════════════════════════════ -->
+  <section class="qaction-row reveal">
 
     {% if recommendation %}
-    <div class="feature-strip-card rec-card">
-      <div class="fsc-icon">🎯</div>
-      <div class="fsc-body">
-        <span class="fsc-value">{{ recommendation.category|title }}</span>
-        <span class="fsc-label">needs work · avg {{ recommendation.avg }}/10</span>
+    <div class="qaction-card qaction--rec card">
+      <div class="qa-top">
+        <span class="qa-badge qa-badge--primary">🎯 Recommended</span>
+        <span class="qa-badge qa-badge--score">{{ recommendation.avg }}/10</span>
       </div>
-      <a class="fsc-action"
-         href="{% url 'new_interview' %}?category={{ recommendation.category }}">
+      <h4 class="qa-title">{{ recommendation.category|title }}</h4>
+      <p class="qa-desc">Your weakest category — focused practice here will lift your overall score the most.</p>
+      <a class="button qa-btn" href="{% url 'new_interview' %}?category={{ recommendation.category }}">
         Practice now →
       </a>
     </div>
     {% endif %}
 
-  </section>
-  {% endif %}
+    <div class="qaction-card qaction--mock card">
+      <div class="qa-top">
+        <span class="qa-badge qa-badge--warning">🎤 Full mock</span>
+      </div>
+      <h4 class="qa-title">Mock interview</h4>
+      <p class="qa-desc">Simulate a real 45-minute session. Hiring-decision style report at the end.</p>
+      <a class="button qa-btn" href="{% url 'new_interview' %}?mode=mock" style="background:linear-gradient(135deg,var(--warning),#e5a800);box-shadow:0 4px 18px rgba(255,204,0,.3);">
+        Start mock →
+      </a>
+    </div>
 
-  <!-- Score insight -->
+    <div class="qaction-card qaction--resume card">
+      <div class="qa-top">
+        <span class="qa-badge qa-badge--mint">📄 AI-powered</span>
+      </div>
+      <h4 class="qa-title">Résumé Screener</h4>
+      <p class="qa-desc">Paste a job description and upload résumés — get ranked scores and deep analysis instantly.</p>
+      <a class="button qa-btn" href="{% url 'resume_screening' %}" style="background:linear-gradient(135deg,var(--mint),#00d4a0);color:#000;box-shadow:0 4px 18px var(--mint-glow);">
+        Screen now →
+      </a>
+    </div>
+
+    <div class="qaction-card qaction--bookmark card">
+      <div class="qa-top">
+        <span class="qa-badge qa-badge--alt">🔖 Saved</span>
+      </div>
+      <h4 class="qa-title">Bookmarks</h4>
+      <p class="qa-desc">Review questions you bookmarked during past sessions. Great for targeted revision.</p>
+      <a class="button alt qa-btn" href="{% url 'bookmarks' %}">
+        Open bookmarks →
+      </a>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       SCORE INSIGHT — ring + text
+  ══════════════════════════════════════════ -->
   <section class="card dash-insight reveal" data-score="{{ stats.avg_score|default:0|floatformat:1 }}">
-    <div class="score-ring" id="score-ring">
-      <div>
-        <strong id="score-ring-value">{{ stats.avg_score|default:0|floatformat:1 }}</strong>
-        <small>avg score</small>
+    <div class="score-ring-wrap">
+      <svg class="score-ring-svg" viewBox="0 0 160 160">
+        <circle class="sr-track" cx="80" cy="80" r="68" fill="none" stroke-width="10"/>
+        <circle class="sr-fill" id="score-ring-fill" cx="80" cy="80" r="68"
+          fill="none" stroke-width="10" stroke-linecap="round"
+          stroke-dasharray="427" stroke-dashoffset="427"
+          transform="rotate(-90 80 80)"/>
+      </svg>
+      <div class="sr-inner">
+        <strong id="score-ring-value" class="sr-number">{{ stats.avg_score|default:0|floatformat:1 }}</strong>
+        <span class="sr-denom">/10</span>
+        <small class="sr-sub">avg score</small>
       </div>
     </div>
     <div class="insight-copy">
-      <h3>Performance pulse</h3>
-      <p>Your average score is tracked continuously across all sessions. Use this signal to iterate on weak areas and steadily push toward interview readiness.</p>
-      <a href="{% url 'new_interview' %}" class="button">Start a focused practice round →</a>
-    </div>
-  </section>
-
-  <!-- Feature 11: Smart recommendation card -->
-  {% if recommendation %}
-  <section class="card section-pad reveal" style="background:var(--primary-dim);border-color:var(--primary-glow);">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:28px;">🎯</div>
-      <div style="flex:1;">
-        <h3 style="margin:0 0 4px;">Recommended next topic</h3>
-        <p style="margin:0;color:var(--text-2);">
-          Your weakest area is <strong style="color:var(--primary);">{{ recommendation.category|title }}</strong>
-          with an average score of <strong>{{ recommendation.avg }}/10</strong>.
-          Focus here to improve your overall readiness.
-        </p>
+      <div class="insight-header">
+        <h3>Performance pulse</h3>
+        <span class="insight-badge" id="insight-readiness-badge">Computing…</span>
       </div>
-      <a class="button" href="{% url 'new_interview' %}?category={{ recommendation.category }}">
-        Practice {{ recommendation.category|title }} →
-      </a>
-    </div>
-  </section>
-  {% endif %}
-
-  <!-- Feature 13: Mock interview mode CTA -->
-  <section class="card section-pad reveal" style="border-color:var(--warning);background:var(--warning-dim);">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:28px;">🎤</div>
-      <div style="flex:1;">
-        <h3 style="margin:0 0 4px;">Full mock interview</h3>
-        <p style="margin:0;color:var(--text-2);">
-          Simulate a real 45-minute interview across mixed topics. Get a hiring-decision style report at the end.
-        </p>
+      <p>Your average score is tracked continuously across all completed sessions. Use this signal to iterate on weak areas and steadily push toward interview readiness.</p>
+      <div class="insight-progress-tiers">
+        <div class="tier" data-min="0" data-max="4" data-label="Needs work" data-color="var(--danger)">
+          <span class="tier-dot"></span><span>0–4</span><span class="tier-name">Needs work</span>
+        </div>
+        <div class="tier" data-min="4" data-max="7" data-label="Getting there" data-color="var(--warning)">
+          <span class="tier-dot"></span><span>4–7</span><span class="tier-name">Getting there</span>
+        </div>
+        <div class="tier" data-min="7" data-max="10" data-label="Interview ready" data-color="var(--success)">
+          <span class="tier-dot"></span><span>7–10</span><span class="tier-name">Interview ready</span>
+        </div>
       </div>
-      <a class="button" href="{% url 'new_interview' %}?mode=mock" style="background:var(--warning);box-shadow:none;">
-        Start mock interview →
-      </a>
+      <a href="{% url 'new_interview' %}" class="button" style="margin-top:6px;">Start a focused practice round →</a>
     </div>
   </section>
 
-  <!-- Resume Screening CTA -->
-  <section class="card section-pad reveal" style="border-color:rgba(79,70,229,0.3);background:var(--primary-dim);">
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div style="font-size:28px;">📄</div>
-      <div style="flex:1;">
-        <h3 style="margin:0 0 4px;">AI Resume Screening</h3>
-        <p style="margin:0;color:var(--text-2);">
-          Paste a job description, upload candidate resumes — get ranked similarity scores and Claude AI deep analysis instantly.
-        </p>
-      </div>
-      <a class="button" href="{% url 'resume_screening' %}">
-        Screen resumes →
-      </a>
-    </div>
-  </section>
-
-  <!-- Feature 4: Progress Charts by Topic -->
+  <!-- ══════════════════════════════════════════
+       PERFORMANCE CHARTS — tabbed
+  ══════════════════════════════════════════ -->
   <section class="card section-pad reveal" id="dash-charts" data-chart='{{ chart_data|escapejs }}'>
     <div class="dash-charts-head">
-      <h3>Performance trends</h3>
-      <div class="dash-charts-tabs">
-        <button class="chart-tab is-active" data-chart-tab="trend">Score over time</button>
-        <button class="chart-tab" data-chart-tab="topics">By topic</button>
+      <div>
+        <h3 style="margin:0 0 2px">Performance trends</h3>
+        <p style="margin:0;font-size:0.75rem;color:var(--text-3);font-family:'JetBrains Mono',monospace">Last 10 sessions · by topic</p>
+      </div>
+      <div class="chart-tab-bar">
+        <button class="chart-tab is-active" data-chart-tab="trend">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Trend
+        </button>
+        <button class="chart-tab" data-chart-tab="topics">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          By topic
+        </button>
       </div>
     </div>
 
     <div class="chart-panel" id="chart-panel-trend">
       <div class="chart-empty" id="chart-trend-empty" hidden>
+        <div class="chart-empty-icon">📊</div>
         <p>Complete at least one session to see your score trend.</p>
+        <a class="button" href="{% url 'new_interview' %}" style="margin-top:10px;">Start now →</a>
       </div>
       <div class="chart-wrap" id="chart-trend-wrap">
         <canvas id="chart-trend" height="200"></canvas>
@@ -173,6 +277,7 @@
 
     <div class="chart-panel" id="chart-panel-topics" hidden>
       <div class="chart-empty" id="chart-topics-empty" hidden>
+        <div class="chart-empty-icon">🗂️</div>
         <p>Complete sessions across different topics to see your category breakdown.</p>
       </div>
       <div class="chart-wrap" id="chart-topics-wrap">
@@ -181,17 +286,27 @@
     </div>
   </section>
 
-  <!-- Recent sessions -->
+  <!-- ══════════════════════════════════════════
+       RECENT SESSIONS — searchable + filterable
+  ══════════════════════════════════════════ -->
   <section class="card dash-recent reveal">
-    <div class="dash-recent-head">
-      <h3>Recent sessions</h3>
+    <div class="recent-top-bar">
+      <h3 style="margin:0">Recent sessions</h3>
       {% if recent %}
-      <div class="filter-row" role="group" aria-label="Filter recent sessions">
-        <button type="button" class="chip-filter is-active" data-filter="all">All</button>
-        <button type="button" class="chip-filter" data-filter="completed">Completed</button>
-        <button type="button" class="chip-filter" data-filter="active">Active</button>
-        <button type="button" class="chip-filter" data-filter="pending">Pending</button>
-        <button type="button" class="chip-filter" data-filter="abandoned">Abandoned</button>
+      <div class="recent-controls">
+        <!-- Live search -->
+        <div class="recent-search-wrap">
+          <svg class="rs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" id="recent-search" placeholder="Search sessions…" autocomplete="off" aria-label="Search sessions">
+        </div>
+        <!-- Filter chips -->
+        <div class="filter-row" role="group" aria-label="Filter by status">
+          <button type="button" class="chip-filter is-active" data-filter="all">All</button>
+          <button type="button" class="chip-filter" data-filter="completed">✓ Done</button>
+          <button type="button" class="chip-filter" data-filter="active">⚡ Active</button>
+          <button type="button" class="chip-filter" data-filter="pending">⏳ Pending</button>
+          <button type="button" class="chip-filter" data-filter="abandoned">✗ Abandoned</button>
+        </div>
       </div>
       {% endif %}
     </div>
@@ -199,40 +314,58 @@
     {% if recent %}
       <div class="recent-stack" id="recent-stack">
         {% for s in recent %}
-          <article class="recent-item" data-status="{{ s.status }}">
-            <div class="recent-main">
-              <h4>
-                {{ s.title|default:'Untitled Session' }}
-                {% if s.session_type == 'mock' %}
-                  <span class="mono" style="font-size:10px;color:var(--warning);margin-left:6px;">MOCK</span>
-                {% endif %}
-              </h4>
-              <p>
-                <span class="mono">{{ s.category }}</span>
-                <span class="dot">·</span>
-                <span class="mono">{{ s.created_at|date:'M d, Y' }}</span>
-              </p>
+          <article class="recent-item" data-status="{{ s.status }}" data-title="{{ s.title|default:'Untitled'|lower }}" data-category="{{ s.category|lower }}">
+            <!-- Left: info -->
+            <div class="ri-left">
+              <div class="ri-status-dot ri-dot--{{ s.status }}" title="{{ s.status|title }}"></div>
+              <div class="ri-body">
+                <h4 class="ri-title">
+                  {{ s.title|default:'Untitled Session' }}
+                  {% if s.session_type == 'mock' %}
+                    <span class="ri-mock-tag">MOCK</span>
+                  {% endif %}
+                </h4>
+                <div class="ri-meta">
+                  <span class="mono">{{ s.category }}</span>
+                  <span class="dot">·</span>
+                  <span class="mono">{{ s.created_at|date:'M d, Y' }}</span>
+                </div>
+              </div>
             </div>
-            <div class="recent-meta">
-              <span class="badge {{ s.status }}">{{ s.status }}</span>
+            <!-- Right: score + badge + action -->
+            <div class="ri-right">
               {% if s.overall_score is not None %}
-                <span class="recent-score">{{ s.overall_score|floatformat:1 }}/10</span>
-              {% else %}
-                <span class="recent-score muted">—</span>
+                <div class="ri-score-pill {% if s.overall_score >= 7 %}score--good{% elif s.overall_score >= 5 %}score--mid{% else %}score--low{% endif %}">
+                  {{ s.overall_score|floatformat:1 }}<span>/10</span>
+                </div>
               {% endif %}
+              <span class="badge {{ s.status }}">{{ s.status }}</span>
               {% if s.status == 'completed' %}
-                <a href="{% url 'results' s.id %}">View results</a>
+                <a class="ri-action" href="{% url 'results' s.id %}">
+                  View results
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </a>
               {% else %}
-                <a href="{% url 'interview_room' s.id %}">Continue</a>
+                <a class="ri-action ri-action--resume" href="{% url 'interview_room' s.id %}">
+                  Continue
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                </a>
               {% endif %}
             </div>
           </article>
         {% endfor %}
       </div>
-      <p class="recent-filter-empty" id="recent-filter-empty" hidden>No sessions match this filter.</p>
+      <p class="recent-filter-empty" id="recent-filter-empty" hidden>
+        No sessions match this filter.
+      </p>
+      <div class="recent-footer">
+        <a class="button alt" href="{% url 'history' %}">View all sessions →</a>
+      </div>
     {% else %}
-      <div class="empty">
-        <p>No sessions yet. Start your first interview to begin tracking your progress.</p>
+      <div class="empty dash-empty">
+        <div class="empty-icon">🚀</div>
+        <h4 style="color:var(--text);font-family:'Clash Display',sans-serif;font-size:1.1rem;text-transform:none;letter-spacing:-0.02em;">No sessions yet</h4>
+        <p>Start your first mock interview to begin tracking your progress and sharpening your skills.</p>
         <a class="button" href="{% url 'new_interview' %}">Create first session →</a>
       </div>
     {% endif %}
@@ -240,8 +373,170 @@
 
 </div>
 
+<!-- ══════════════════════════════════════════
+     EXTRA CSS for new dashboard elements
+══════════════════════════════════════════ -->
+<style>
+/* ── Hero ── */
+.dash-hero { padding:40px 44px; display:grid; grid-template-columns:1.5fr 1fr; gap:28px; align-items:center; position:relative; overflow:hidden; }
+.hero-orb { position:absolute; top:-80px; right:-80px; width:320px; height:320px; border-radius:50%; background:radial-gradient(circle, var(--primary-glow) 0%, transparent 70%); pointer-events:none; z-index:0; animation:orb-pulse 4s ease-in-out infinite; }
+@keyframes orb-pulse { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.08)} }
+.dash-hero > * { position:relative; z-index:1; }
+
+.dash-hero-greeting { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+.greeting-badge { display:inline-flex; align-items:center; gap:6px; background:var(--primary-dim); border:1px solid var(--border); color:var(--primary); font-family:'JetBrains Mono',monospace; font-size:.60rem; letter-spacing:.16em; text-transform:uppercase; padding:4px 11px; border-radius:6px; }
+.greeting-dot { width:6px;height:6px;border-radius:50%;background:var(--primary);animation:blink 1.8s ease-in-out infinite; }
+.streak-pill { display:inline-flex;align-items:center;gap:3px;background:var(--amber-dim);border:1px solid rgba(255,204,0,.25);color:var(--amber);font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.04em; }
+
+.dash-hero-title { font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:700;line-height:1.1;margin:0 0 11px;letter-spacing:-.03em; }
+.hero-name { color:var(--primary); }
+.dash-hero-desc { color:var(--text-2);font-size:.875rem;margin:0 0 18px;line-height:1.7;max-width:44ch; }
+.hero-actions { display:flex;gap:9px;flex-wrap:wrap; }
+.hero-cta-primary { padding:11px 22px;font-size:.875rem; }
+.hero-cta-alt { padding:10px 17px;font-size:.83rem; }
+
+/* Momentum panel */
+.momentum-panel { background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;display:flex;gap:18px;align-items:center; }
+.momentum-ring-wrap { position:relative;width:90px;height:90px;flex-shrink:0;display:flex;align-items:center;justify-content:center; }
+.momentum-ring-svg { width:90px;height:90px; }
+.mr-track { stroke:var(--border); }
+.mr-fill { stroke:var(--primary); transition:stroke-dashoffset 1.2s cubic-bezier(.23,1,.32,1); }
+.momentum-ring-inner { position:absolute;text-align:center;line-height:1; }
+.mr-pct { display:block;font-size:1rem;font-weight:800;color:var(--text);font-family:'Clash Display',sans-serif;letter-spacing:-.03em; }
+.mr-label { display:block;font-size:.52rem;color:var(--text-3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-top:2px; }
+
+.momentum-details { flex:1;display:flex;flex-direction:column;gap:7px; }
+.mp-title { font-weight:700;font-size:.84rem;color:var(--text);margin:0;font-family:'Clash Display',sans-serif; }
+.mp-sub { font-size:.70rem;color:var(--text-3);font-family:'JetBrains Mono',monospace;margin:0; }
+.mp-bar-row { display:flex;align-items:center;gap:9px; }
+.mp-bar-track { flex:1;height:5px;border-radius:999px;background:var(--border);overflow:hidden; }
+.mp-bar-fill { display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--mint));border-radius:999px;transition:width 1.2s cubic-bezier(.23,1,.32,1);box-shadow:0 0 8px var(--primary-glow); }
+.mp-action { display:inline-flex;align-items:center;font-size:.71rem;font-weight:700;color:var(--primary);text-decoration:none;border:1px solid var(--border);border-radius:7px;padding:4px 10px;background:var(--primary-dim);transition:background .15s,transform .15s;align-self:flex-start;font-family:'Plus Jakarta Sans',sans-serif; }
+.mp-action:hover { background:rgba(139,111,255,.17);transform:translateX(2px); }
+
+/* ── KPI Grid ── */
+.kpi-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px; }
+.kpi-card { padding:20px 22px 14px;position:relative;overflow:hidden;cursor:default;transition:transform .2s,box-shadow .25s,border-color .22s; }
+.kpi-card:hover { transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--border-2); }
+.kpi-card::after { content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 60%,rgba(139,111,255,.04));pointer-events:none; }
+.kpi-icon { width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;flex-shrink:0; }
+.kpi-icon svg { width:18px;height:18px; }
+.kpi-icon--blue   { background:var(--primary-dim);color:var(--primary); }
+.kpi-icon--green  { background:var(--success-dim);color:var(--success); }
+.kpi-icon--purple { background:var(--primary-dim);color:var(--primary-h); }
+.kpi-icon--amber  { background:var(--amber-dim);color:var(--amber); }
+.kpi-label { font-size:.62rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);font-family:'JetBrains Mono',monospace;margin:0 0 6px; }
+.kpi-value { font-size:clamp(1.8rem,2.6vw,2.5rem);color:var(--text);letter-spacing:-.04em;font-family:'Clash Display',sans-serif;margin:0 0 3px;line-height:1; }
+.kpi-unit { font-size:.85rem;color:var(--text-3);font-weight:400;letter-spacing:0; }
+.kpi-sub { font-size:.68rem;color:var(--text-3);margin:0; }
+.kpi-bar-wrap { margin-top:14px;height:3px;border-radius:999px;background:var(--border);overflow:hidden; }
+.kpi-sparkbar { height:100%;width:var(--pct,40%);max-width:100%;border-radius:999px;opacity:.7;transition:width 1.1s cubic-bezier(.23,1,.32,1); }
+.kpi-streak { border-top:2px solid var(--amber); }
+
+/* ── Quick action row ── */
+.qaction-row { display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px; }
+.qaction-card { padding:20px 22px;display:flex;flex-direction:column;gap:8px;transition:transform .2s,box-shadow .25s,border-color .22s;cursor:default; }
+.qaction-card:hover { transform:translateY(-4px);box-shadow:var(--shadow-md); }
+.qa-top { display:flex;align-items:center;gap:7px;flex-wrap:wrap; }
+.qa-badge { display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:3px 9px;font-size:.60rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-family:'JetBrains Mono',monospace;border:1px solid transparent; }
+.qa-badge--primary { background:var(--primary-dim);color:var(--primary);border-color:var(--border); }
+.qa-badge--score   { background:var(--bg-3);color:var(--text-2);border-color:var(--border); }
+.qa-badge--warning { background:var(--amber-dim);color:var(--amber);border-color:rgba(255,204,0,.22); }
+.qa-badge--mint    { background:var(--mint-dim);color:var(--mint);border-color:rgba(0,255,179,.22); }
+.qa-badge--alt     { background:var(--bg-3);color:var(--text-2);border-color:var(--border); }
+.qa-title { font-size:.95rem;font-weight:800;color:var(--text);margin:0;font-family:'Clash Display',sans-serif;letter-spacing:-.02em; }
+.qa-desc  { font-size:.75rem;color:var(--text-2);margin:0;line-height:1.6;flex:1; }
+.qa-btn   { padding:8px 16px;font-size:.80rem;margin-top:4px;align-self:flex-start; }
+.qaction--rec    { border-top:2px solid var(--primary); }
+.qaction--mock   { border-top:2px solid var(--amber); }
+.qaction--resume { border-top:2px solid var(--mint); }
+.qaction--bookmark { border-top:2px solid var(--border-2); }
+
+/* ── Score insight ── */
+.dash-insight { display:grid;grid-template-columns:180px 1fr;gap:32px;align-items:center;padding:30px 36px; }
+.score-ring-wrap { position:relative;width:180px;height:180px;flex-shrink:0;display:flex;align-items:center;justify-content:center; }
+.score-ring-svg  { width:180px;height:180px; }
+.sr-track { stroke:var(--border); }
+.sr-fill  { stroke:var(--primary);transition:stroke-dashoffset 1.4s cubic-bezier(.23,1,.32,1),stroke .6s; }
+.sr-inner { position:absolute;text-align:center;line-height:1;display:flex;flex-direction:column;align-items:center; }
+.sr-number { font-size:2rem;font-weight:800;color:var(--text);font-family:'Clash Display',sans-serif;letter-spacing:-.04em; }
+.sr-denom  { font-size:.75rem;color:var(--text-3);margin-top:2px; }
+.sr-sub    { font-size:.52rem;color:var(--text-3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-top:5px; }
+.insight-header { display:flex;align-items:center;gap:11px;margin-bottom:9px; }
+.insight-header h3 { margin:0; }
+.insight-badge { padding:4px 12px;border-radius:20px;font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-family:'JetBrains Mono',monospace;background:var(--primary-dim);color:var(--primary);border:1px solid var(--border);transition:background .3s,color .3s; }
+.insight-copy p { margin:0 0 14px;color:var(--text-2);font-size:.875rem;line-height:1.7; }
+.insight-progress-tiers { display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px; }
+.tier { display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;background:var(--bg-3);border:1px solid var(--border);font-size:.66rem;color:var(--text-3);font-family:'JetBrains Mono',monospace;transition:all .2s; }
+.tier.is-active { border-color:var(--border-2);color:var(--text);background:var(--bg-4); }
+.tier-dot { width:7px;height:7px;border-radius:50%;background:var(--text-3);flex-shrink:0; }
+.tier-name { font-weight:700; }
+
+/* ── Chart tab bar ── */
+.chart-tab-bar { display:flex;gap:3px;background:var(--bg-3);border:1px solid var(--border);border-radius:9px;padding:3px; }
+.chart-tab { display:flex;align-items:center;gap:5px; }
+.chart-empty-icon { font-size:2rem;margin-bottom:8px; }
+
+/* ── Recent sessions ── */
+.recent-top-bar { display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:0 0 14px;border-bottom:1px solid var(--border); }
+.recent-controls { display:flex;align-items:center;gap:9px;flex-wrap:wrap; }
+.recent-search-wrap { position:relative;display:flex;align-items:center;min-width:160px; }
+.rs-icon { position:absolute;left:10px;width:13px;height:13px;stroke:var(--text-3);pointer-events:none; }
+#recent-search { width:100%;padding:7px 12px 7px 30px;background:var(--bg-3);border:1px solid var(--border);border-radius:8px;font-size:.82rem;color:var(--text);height:32px;font-family:'Plus Jakarta Sans',sans-serif; }
+#recent-search:focus { outline:none;border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-dim); }
+
+.ri-left { display:flex;align-items:center;gap:11px;flex:1;min-width:0; }
+.ri-status-dot { width:9px;height:9px;border-radius:50%;flex-shrink:0; }
+.ri-dot--completed { background:var(--success);box-shadow:0 0 8px var(--success); }
+.ri-dot--active    { background:var(--primary);box-shadow:0 0 8px var(--primary-glow);animation:blink 1.4s ease-in-out infinite; }
+.ri-dot--pending   { background:var(--warning); }
+.ri-dot--abandoned { background:var(--danger); }
+.ri-body { flex:1;min-width:0; }
+.ri-title { margin:0 0 4px;font-size:.875rem;font-weight:700;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-transform:none;letter-spacing:0; }
+.ri-mock-tag { display:inline-flex;margin-left:6px;background:var(--amber-dim);color:var(--amber);border:1px solid rgba(255,204,0,.2);font-size:.55rem;font-family:'JetBrains Mono',monospace;letter-spacing:.08em;padding:1px 5px;border-radius:4px;font-weight:700;vertical-align:middle; }
+.ri-meta { display:flex;align-items:center;gap:5px;font-size:.71rem;color:var(--text-3);font-family:'JetBrains Mono',monospace; }
+
+.ri-right { display:flex;align-items:center;gap:8px;flex-wrap:nowrap;flex-shrink:0; }
+.ri-score-pill { font-family:'JetBrains Mono',monospace;font-size:.80rem;font-weight:800;padding:3px 10px;border-radius:20px;border:1px solid transparent; }
+.ri-score-pill span { font-size:.68rem;font-weight:400;opacity:.6; }
+.score--good { background:var(--success-dim);color:var(--success);border-color:rgba(0,255,179,.2); }
+.score--mid  { background:var(--amber-dim);color:var(--amber);border-color:rgba(255,204,0,.2); }
+.score--low  { background:var(--danger-dim);color:var(--danger);border-color:rgba(255,92,92,.2); }
+
+.ri-action { display:inline-flex;align-items:center;gap:4px;color:var(--text-2);text-decoration:none;font-size:.68rem;font-weight:700;border:1px solid var(--border);border-radius:7px;padding:5px 10px;letter-spacing:.04em;font-family:'JetBrains Mono',monospace;transition:all .15s;white-space:nowrap;text-transform:uppercase; }
+.ri-action:hover { border-color:var(--primary);color:var(--primary);background:var(--primary-dim);text-decoration:none; }
+.ri-action--resume { border-color:rgba(0,255,179,.25);color:var(--success); }
+.ri-action--resume:hover { border-color:var(--success);background:var(--success-dim);color:var(--success); }
+
+.recent-footer { padding-top:14px;border-top:1px solid var(--border);margin-top:8px;display:flex;justify-content:center; }
+
+.dash-empty { display:flex;flex-direction:column;align-items:center;gap:9px;padding:52px 20px; }
+.empty-icon  { font-size:2.5rem;margin-bottom:4px; }
+
+/* ── Responsive ── */
+@media(max-width:1024px) { .kpi-grid { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:860px) {
+  .dash-hero { grid-template-columns:1fr;padding:24px 20px; }
+  .momentum-panel { flex-direction:column;align-items:flex-start; }
+  .kpi-grid { grid-template-columns:repeat(2,1fr); }
+  .qaction-row { grid-template-columns:1fr 1fr; }
+  .dash-insight { grid-template-columns:1fr;padding:22px 20px; }
+  .recent-top-bar { flex-direction:column;align-items:flex-start; }
+  .recent-controls { width:100%; }
+  .recent-search-wrap { flex:1; }
+  .ri-right { flex-wrap:wrap; }
+}
+@media(max-width:600px) {
+  .qaction-row { grid-template-columns:1fr; }
+  .hero-actions .button { width:100%;justify-content:center; }
+  .recent-item { flex-direction:column;align-items:flex-start;gap:9px; }
+  .ri-right { width:100%;justify-content:flex-start; }
+  .recent-controls { flex-direction:column;align-items:stretch; }
+}
+</style>
+
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/dashboard.js' %}"></script>
+<script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

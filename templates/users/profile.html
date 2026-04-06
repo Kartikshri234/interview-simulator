@@ -4,111 +4,444 @@
 
 {% block content %}
 
-<section class="card page-hero reveal">
-  <div class="hero-strip"><div class="hero-pill">Your account</div></div>
-  <h1>Your profile</h1>
-  <p>Update your info to personalize future interview sessions.</p>
+<!-- ════════════════════════════════════════════
+     PROFILE HERO
+════════════════════════════════════════════ -->
+<section class="card profile-hero-card reveal">
+  <div class="ph-bg-orb" aria-hidden="true"></div>
+  <div class="ph-avatar-col">
+    {% if request.user.avatar %}
+      <div class="ph-avatar-ring">
+        <img src="{{ request.user.avatar.url }}" alt="Your avatar" class="ph-avatar-img" id="ph-avatar-img">
+      </div>
+    {% else %}
+      <div class="ph-avatar-ring ph-avatar-placeholder" id="ph-avatar-img">
+        {{ request.user.initials }}
+      </div>
+    {% endif %}
+    <div class="ph-level-badge">
+      <span class="ph-level-dot"></span>
+      {{ request.user.experience_level|title|default:"Unknown" }}
+    </div>
+  </div>
+  <div class="ph-info-col">
+    <p class="ph-kicker">Your account</p>
+    <h1 class="ph-name">{{ request.user.username }}</h1>
+    <p class="ph-email mono">{{ request.user.email }}</p>
+    {% if request.user.target_role %}
+      <p class="ph-role">🎯 {{ request.user.target_role }}</p>
+    {% endif %}
+    {% if request.user.bio %}
+      <p class="ph-bio">"{{ request.user.bio }}"</p>
+    {% endif %}
+  </div>
+  <div class="ph-stats-col">
+    <div class="ph-stat">
+      <span class="ph-stat-value count-up" data-value="{{ stats.total|default:0 }}">{{ stats.total|default:0 }}</span>
+      <span class="ph-stat-label">Sessions</span>
+    </div>
+    <div class="ph-stat-divider"></div>
+    <div class="ph-stat">
+      <span class="ph-stat-value count-up" data-value="{{ stats.completed|default:0 }}">{{ stats.completed|default:0 }}</span>
+      <span class="ph-stat-label">Completed</span>
+    </div>
+    <div class="ph-stat-divider"></div>
+    <div class="ph-stat">
+      <span class="ph-stat-value count-up" data-value="{{ stats.avg_score|default:0|floatformat:1 }}" data-decimals="1">
+        {{ stats.avg_score|default:0|floatformat:1 }}
+      </span>
+      <span class="ph-stat-label">Avg score</span>
+    </div>
+  </div>
 </section>
 
-<div class="grid two">
+<!-- ════════════════════════════════════════════
+     MAIN GRID: edit form + side panel
+════════════════════════════════════════════ -->
+<div class="profile-grid">
 
-  <article class="card section-pad reveal">
-    <h3>Profile details</h3>
-    <form method="post" enctype="multipart/form-data" action="{% url 'profile' %}" id="profile-form">
-      {% csrf_token %}
-      <label>
-        Username
-        <input type="text" name="username" value="{{ request.user.username }}" required>
-      </label>
-      <label>
-        Bio
-        <textarea name="bio" rows="3" placeholder="Your goals, background…">{{ request.user.bio }}</textarea>
-      </label>
-      <label>
-        Target role
-        <input type="text" name="target_role" value="{{ request.user.target_role }}" placeholder="e.g. Backend Engineer">
-      </label>
-      <label>
-        Experience level
-        <select name="experience_level">
-          <option value="junior" {% if request.user.experience_level == 'junior' %}selected{% endif %}>Junior</option>
-          <option value="mid"    {% if request.user.experience_level == 'mid'    %}selected{% endif %}>Mid-level</option>
-          <option value="senior" {% if request.user.experience_level == 'senior' %}selected{% endif %}>Senior</option>
-        </select>
-      </label>
+  <!-- ── LEFT: Edit form ── -->
+  <div class="profile-form-col">
 
-      <div>
-        <div class="avatar-upload-label">Avatar</div>
-        <div class="avatar-upload-zone" id="avatar-drop-zone">
-          <input type="file" name="avatar" id="avatar-input" accept="image/*" class="avatar-file-input">
-          <div class="avatar-preview-wrap" id="avatar-preview-wrap" style="display:none;">
-            <img id="avatar-preview-img" src="" alt="preview">
-            <button type="button" class="avatar-clear-btn" id="avatar-clear-btn" title="Remove">✕</button>
+    <!-- Profile details -->
+    <article class="card section-pad reveal" id="profile-details-card">
+      <div class="pcard-header">
+        <div class="pcard-icon pcard-icon--primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <h3 style="margin:0 0 2px">Profile details</h3>
+          <p style="margin:0;font-size:.72rem;color:var(--text-3);font-family:'JetBrains Mono',monospace">Update your info · saved on submit</p>
+        </div>
+      </div>
+
+      <form method="post" enctype="multipart/form-data" action="{% url 'profile' %}" id="profile-form" novalidate>
+        {% csrf_token %}
+
+        <!-- Username + bio row -->
+        <div class="pf-row">
+          <label class="pf-label">
+            Username
+            <input type="text" name="username" value="{{ request.user.username }}" required autocomplete="username">
+          </label>
+          <label class="pf-label">
+            Target role
+            <input type="text" name="target_role" value="{{ request.user.target_role }}" placeholder="e.g. Backend Engineer">
+          </label>
+        </div>
+
+        <label class="pf-label">
+          Bio
+          <textarea name="bio" rows="3" placeholder="Your goals, background, what you're working towards…">{{ request.user.bio }}</textarea>
+        </label>
+
+        <label class="pf-label">
+          Experience level
+          <div class="exp-picker">
+            {% for val, emoji, desc in experience_choices|default:"" %}
+              <!-- Falls back to select below if no template var -->
+            {% endfor %}
+            <select name="experience_level" id="exp-level-select">
+              <option value="junior" {% if request.user.experience_level == 'junior' %}selected{% endif %}>🌱 Junior</option>
+              <option value="mid"    {% if request.user.experience_level == 'mid'    %}selected{% endif %}>🌿 Mid-level</option>
+              <option value="senior" {% if request.user.experience_level == 'senior' %}selected{% endif %}>🌳 Senior</option>
+            </select>
           </div>
-          <div class="avatar-placeholder-zone" id="avatar-placeholder-zone">
-            <div class="avatar-upload-icon">
-              {% if request.user.avatar %}
-                <img src="{{ request.user.avatar.url }}" alt="current" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);">
-              {% else %}
-                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--gold)">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-              {% endif %}
+        </label>
+
+        <!-- Avatar upload -->
+        <div class="pf-avatar-section">
+          <div class="pf-label-text">Avatar</div>
+          <div class="avatar-upload-zone" id="avatar-drop-zone">
+            <input type="file" name="avatar" id="avatar-input" accept="image/*" class="avatar-file-input">
+            <div class="avatar-preview-wrap" id="avatar-preview-wrap" style="display:none">
+              <img id="avatar-preview-img" src="" alt="Preview">
+              <button type="button" class="avatar-clear-btn" id="avatar-clear-btn" title="Remove">✕</button>
             </div>
-            <div class="avatar-upload-text">
-              <span class="avatar-upload-main">
-                {% if request.user.avatar %}Change avatar{% else %}Upload avatar{% endif %}
-              </span>
-              <span class="avatar-upload-sub">Drag &amp; drop or click · PNG, JPG, WebP</span>
+            <div class="avatar-placeholder-zone" id="avatar-placeholder-zone">
+              <div class="avatar-upload-icon">
+                {% if request.user.avatar %}
+                  <img src="{{ request.user.avatar.url }}" alt="current" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--primary)">
+                {% else %}
+                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                {% endif %}
+              </div>
+              <div class="avatar-upload-text">
+                <span class="avatar-upload-main">{% if request.user.avatar %}Change avatar{% else %}Upload avatar{% endif %}</span>
+                <span class="avatar-upload-sub">Drag & drop or click · PNG, JPG, WebP · Max 5 MB</span>
+              </div>
             </div>
           </div>
         </div>
+
+        <!-- Save button row -->
+        <div class="pf-submit-row">
+          <button type="submit" class="pf-save-btn" id="pf-save-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save changes
+          </button>
+          <span class="pf-save-status" id="pf-save-status"></span>
+        </div>
+      </form>
+    </article>
+
+    <!-- Password change -->
+    <article class="card section-pad reveal" id="password-card">
+      <div class="pcard-header">
+        <div class="pcard-icon pcard-icon--amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div>
+          <h3 style="margin:0 0 2px">Change password</h3>
+          <p style="margin:0;font-size:.72rem;color:var(--text-3);font-family:'JetBrains Mono',monospace">Keep your account secure</p>
+        </div>
+        <button type="button" class="pw-toggle-btn" id="pw-toggle-btn" aria-expanded="false">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" id="pw-toggle-chevron"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
       </div>
 
-      <button type="submit" style="margin-top:6px;">Save changes</button>
-    </form>
-  </article>
+      <div class="pw-form-wrap" id="pw-form-wrap" style="display:none">
+        <form id="password-form" method="post" action="{% url 'profile' %}" style="margin-top:16px">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="change_password">
+          <label class="pf-label">
+            Current password
+            <div class="pw-input-wrap">
+              <input type="password" name="current_password" id="current_password" autocomplete="current-password" required placeholder="Enter current password">
+              <button type="button" class="pw-reveal-btn" data-target="current_password" title="Show/hide">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </label>
+          <div class="pf-row">
+            <label class="pf-label">
+              New password
+              <div class="pw-input-wrap">
+                <input type="password" name="new_password" id="new_password" autocomplete="new-password" required placeholder="Min 8 characters">
+                <button type="button" class="pw-reveal-btn" data-target="new_password" title="Show/hide">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </label>
+            <label class="pf-label">
+              Confirm new password
+              <div class="pw-input-wrap">
+                <input type="password" name="confirm_password" id="confirm_password" autocomplete="new-password" required placeholder="Repeat new password">
+                <button type="button" class="pw-reveal-btn" data-target="confirm_password" title="Show/hide">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </label>
+          </div>
 
-  <article class="card section-pad profile-side-panel reveal">
-    <div class="avatar-wrap">
-      {% if request.user.avatar %}
-        <img src="{{ request.user.avatar.url }}" alt="avatar" class="avatar-img" id="profile-avatar-display">
-      {% else %}
-        <div class="avatar-placeholder" id="profile-avatar-display">{{ request.user.initials }}</div>
-      {% endif %}
-      <div class="profile-identity">
-        <div class="profile-identity-name">{{ request.user.username }}</div>
-        <div class="muted mono">{{ request.user.email }}</div>
-        {% if request.user.target_role %}
-          <div class="profile-role">{{ request.user.target_role }}</div>
-        {% endif %}
+          <!-- Password strength meter -->
+          <div class="pw-strength-wrap" id="pw-strength-wrap">
+            <div class="pw-strength-bar">
+              <span class="pw-strength-fill" id="pw-strength-fill"></span>
+            </div>
+            <span class="pw-strength-label" id="pw-strength-label">Enter a password</span>
+          </div>
+
+          <div id="pw-match-msg" class="pw-match-msg" hidden></div>
+
+          <div class="pf-submit-row" style="margin-top:14px">
+            <button type="submit" class="pf-save-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              Update password
+            </button>
+          </div>
+        </form>
       </div>
-    </div>
+    </article>
 
-    <hr class="divider">
+  </div>
 
-    <div>
-      <div class="muted profile-mini-head">Progress snapshot</div>
-      <div class="grid profile-stat-grid">
-        <div class="card stat profile-stat-card">
-          <div class="label">Total sessions</div>
-          <div class="value profile-stat-value">{{ stats.total|default:0 }}</div>
+  <!-- ── RIGHT: Side panel ── -->
+  <aside class="profile-side-col">
+
+    <!-- JWT token inspector (dev / power-user tool) -->
+    <article class="card section-pad reveal" id="jwt-inspector-card">
+      <div class="pcard-header">
+        <div class="pcard-icon pcard-icon--mint">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
         </div>
-        <div class="card stat profile-stat-card">
-          <div class="label">Completed</div>
-          <div class="value profile-stat-value">{{ stats.completed|default:0 }}</div>
+        <div>
+          <h3 style="margin:0 0 2px">Session & JWT</h3>
+          <p style="margin:0;font-size:.72rem;color:var(--text-3);font-family:'JetBrains Mono',monospace">Live token inspector</p>
         </div>
-        <div class="card stat profile-stat-card">
-          <div class="label">Avg score</div>
-          <div class="value profile-stat-value">{{ stats.avg_score|default:0|floatformat:1 }}<span>/10</span></div>
+        <button type="button" class="pw-toggle-btn" id="jwt-toggle-btn" aria-expanded="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+      </div>
+
+      <div id="jwt-body">
+        <div class="jwt-status-row">
+          <span class="jwt-status-indicator" id="jwt-status-dot" title="Token status"></span>
+          <span class="jwt-status-label" id="jwt-status-label">Checking…</span>
+          <button type="button" class="jwt-refresh-btn" id="jwt-manual-refresh" title="Force refresh token">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Refresh
+          </button>
+        </div>
+
+        <div class="jwt-info-grid" id="jwt-info-grid">
+          <div class="jwt-row">
+            <span class="jwt-key">User</span>
+            <span class="jwt-val" id="jwt-username">—</span>
+          </div>
+          <div class="jwt-row">
+            <span class="jwt-key">Email</span>
+            <span class="jwt-val" id="jwt-email">—</span>
+          </div>
+          <div class="jwt-row">
+            <span class="jwt-key">Role</span>
+            <span class="jwt-val" id="jwt-role">—</span>
+          </div>
+          <div class="jwt-row">
+            <span class="jwt-key">Exp. level</span>
+            <span class="jwt-val" id="jwt-exp-level">—</span>
+          </div>
+          <div class="jwt-row">
+            <span class="jwt-key">Staff</span>
+            <span class="jwt-val" id="jwt-is-staff">—</span>
+          </div>
+          <div class="jwt-row jwt-row--wide">
+            <span class="jwt-key">Token expires</span>
+            <span class="jwt-val" id="jwt-expires">—</span>
+          </div>
+          <div class="jwt-row jwt-row--wide">
+            <span class="jwt-key">Time remaining</span>
+            <span class="jwt-val" id="jwt-remaining">—</span>
+          </div>
+        </div>
+
+        <!-- Expiry progress bar -->
+        <div class="jwt-expiry-bar-wrap" title="Token lifetime remaining">
+          <div class="jwt-expiry-bar" id="jwt-expiry-bar"></div>
+        </div>
+
+        <div class="jwt-actions">
+          <button type="button" class="jwt-action-btn" id="jwt-copy-btn" title="Copy access token">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy token
+          </button>
+          <button type="button" class="jwt-action-btn jwt-action-btn--danger" id="jwt-logout-all-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sign out
+          </button>
         </div>
       </div>
-    </div>
-  </article>
+    </article>
+
+    <!-- Danger zone -->
+    <article class="card section-pad reveal danger-zone-card">
+      <div class="pcard-header">
+        <div class="pcard-icon pcard-icon--danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div>
+          <h3 style="margin:0 0 2px;color:var(--danger)">Danger zone</h3>
+          <p style="margin:0;font-size:.72rem;color:var(--text-3);font-family:'JetBrains Mono',monospace">Irreversible actions</p>
+        </div>
+      </div>
+      <p style="font-size:.80rem;color:var(--text-2);margin:12px 0 16px;line-height:1.65">
+        Deleting your account permanently removes all sessions, scores, and data. This cannot be undone.
+      </p>
+      <button type="button" class="danger-btn" id="delete-account-btn" style="width:100%;padding:10px;font-size:.82rem;cursor:pointer">
+        ⚠ Delete my account
+      </button>
+      <div class="delete-confirm-panel" id="delete-confirm-panel" style="display:none">
+        <p style="font-size:.78rem;color:var(--danger);margin:12px 0 8px;font-weight:700">Type DELETE to confirm:</p>
+        <input type="text" id="delete-confirm-input" placeholder="DELETE" autocomplete="off">
+        <button type="button" class="danger-btn" id="delete-confirm-btn" disabled style="width:100%;margin-top:8px;padding:10px;font-size:.82rem;cursor:pointer;opacity:.5">
+          Confirm deletion
+        </button>
+      </div>
+    </article>
+
+  </aside>
 
 </div>
+
+<style>
+/* ── Profile hero ── */
+.profile-hero-card { padding:36px 40px;display:grid;grid-template-columns:auto 1fr auto;gap:28px;align-items:center;position:relative;overflow:hidden; }
+.ph-bg-orb { position:absolute;top:-60px;right:-60px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,var(--primary-glow) 0%,transparent 70%);pointer-events:none;z-index:0;animation:orb-pulse 4s ease-in-out infinite; }
+@keyframes orb-pulse { 0%,100%{opacity:.5;transform:scale(1)} 50%{opacity:.9;transform:scale(1.06)} }
+.profile-hero-card > * { position:relative;z-index:1; }
+
+.ph-avatar-col { display:flex;flex-direction:column;align-items:center;gap:9px; }
+.ph-avatar-ring { width:90px;height:90px;border-radius:50%;border:3px solid var(--primary);box-shadow:0 0 28px var(--primary-glow);display:flex;align-items:center;justify-content:center;overflow:hidden; }
+.ph-avatar-img  { width:100%;height:100%;object-fit:cover; }
+.ph-avatar-placeholder { background:var(--primary-dim);font-size:2rem;font-weight:800;color:var(--primary);font-family:'Clash Display',sans-serif; }
+.ph-level-badge { display:inline-flex;align-items:center;gap:5px;background:var(--primary-dim);border:1px solid var(--border);color:var(--primary);font-family:'JetBrains Mono',monospace;font-size:.60rem;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px; }
+.ph-level-dot { width:5px;height:5px;border-radius:50%;background:var(--primary);animation:blink 1.8s ease-in-out infinite; }
+
+.ph-info-col { display:flex;flex-direction:column;gap:4px; }
+.ph-kicker { font-family:'JetBrains Mono',monospace;font-size:.58rem;text-transform:uppercase;letter-spacing:.18em;color:var(--primary);margin:0; }
+.ph-name   { font-size:clamp(1.5rem,3vw,2.2rem);font-weight:700;margin:0;letter-spacing:-.03em;color:var(--text); }
+.ph-email  { font-size:.78rem;color:var(--text-3);margin:0; }
+.ph-role   { font-size:.80rem;color:var(--text-2);margin:3px 0 0; }
+.ph-bio    { font-size:.78rem;color:var(--text-3);font-style:italic;margin:5px 0 0;max-width:40ch; }
+
+.ph-stats-col { display:flex;align-items:center;gap:0;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 24px; }
+.ph-stat { display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px; }
+.ph-stat-value { font-size:1.9rem;font-weight:800;color:var(--text);font-family:'Clash Display',sans-serif;letter-spacing:-.04em;line-height:1; }
+.ph-stat-label { font-size:.60rem;color:var(--text-3);font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.1em; }
+.ph-stat-divider { width:1px;height:40px;background:var(--border);margin:0 18px; }
+
+/* ── Profile grid ── */
+.profile-grid { display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start;margin-top:18px; }
+
+/* ── Form enhancements ── */
+.pcard-header { display:flex;align-items:center;gap:12px;margin-bottom:20px; }
+.pcard-icon { width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.pcard-icon svg { width:18px;height:18px; }
+.pcard-icon--primary { background:var(--primary-dim);color:var(--primary); }
+.pcard-icon--amber   { background:var(--amber-dim);color:var(--amber); }
+.pcard-icon--mint    { background:var(--mint-dim);color:var(--mint); }
+.pcard-icon--danger  { background:var(--danger-dim);color:var(--danger); }
+
+.pf-row   { display:grid;grid-template-columns:1fr 1fr;gap:14px; }
+.pf-label { display:grid;gap:7px;font-size:.66rem;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-3);font-family:'JetBrains Mono',monospace; }
+.pf-label input,.pf-label textarea,.pf-label select { margin:0; }
+
+.pf-avatar-section { display:flex;flex-direction:column;gap:7px; }
+.pf-label-text { font-size:.66rem;font-weight:700;letter-spacing:.10em;text-transform:uppercase;color:var(--text-3);font-family:'JetBrains Mono',monospace; }
+
+.pf-submit-row { display:flex;align-items:center;gap:12px;margin-top:4px; }
+.pf-save-btn   { display:inline-flex;align-items:center;gap:7px;padding:11px 22px;font-size:.875rem; }
+.pf-save-status { font-size:.76rem;font-family:'JetBrains Mono',monospace;color:var(--success);font-weight:700;opacity:0;transition:opacity .3s; }
+.pf-save-status.visible { opacity:1; }
+
+/* Password section */
+.pw-toggle-btn { margin-left:auto;width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background .15s,color .15s;flex-shrink:0;box-shadow:none; }
+.pw-toggle-btn:hover { background:var(--primary-dim);color:var(--primary);border-color:var(--primary);transform:none; }
+.pw-form-wrap { overflow:hidden; }
+.pw-input-wrap { position:relative; }
+.pw-input-wrap input { padding-right:38px; }
+.pw-reveal-btn { position:absolute;right:10px;top:50%;transform:translateY(-50%);background:transparent;border:none;color:var(--text-3);cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;box-shadow:none; }
+.pw-reveal-btn:hover { color:var(--primary);transform:translateY(-50%); }
+.pw-strength-wrap { display:flex;align-items:center;gap:10px;margin-top:4px; }
+.pw-strength-bar { flex:1;height:4px;border-radius:999px;background:var(--border);overflow:hidden; }
+.pw-strength-fill { display:block;height:100%;width:0;border-radius:999px;transition:width .3s,background .3s; }
+.pw-strength-label { font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text-3);white-space:nowrap; }
+.pw-match-msg { font-size:.72rem;font-family:'JetBrains Mono',monospace;padding:5px 0;font-weight:600; }
+
+/* ── JWT inspector ── */
+.jwt-status-row { display:flex;align-items:center;gap:9px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border); }
+.jwt-status-indicator { width:10px;height:10px;border-radius:50%;background:var(--text-3);flex-shrink:0;transition:background .3s,box-shadow .3s; }
+.jwt-status-indicator.valid   { background:var(--success);box-shadow:0 0 8px var(--success); }
+.jwt-status-indicator.expiring { background:var(--warning);animation:blink 1s ease-in-out infinite; }
+.jwt-status-indicator.invalid { background:var(--danger); }
+.jwt-status-label { font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text-2);flex:1; }
+.jwt-refresh-btn { display:inline-flex;align-items:center;gap:5px;background:var(--primary-dim);border:1px solid var(--border);color:var(--primary);border-radius:7px;padding:4px 10px;font:700 .68rem 'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:background .15s;box-shadow:none; }
+.jwt-refresh-btn:hover { background:rgba(139,111,255,.18);transform:none; }
+
+.jwt-info-grid { display:grid;grid-template-columns:1fr 1fr;gap:2px;margin-bottom:14px; }
+.jwt-row { display:flex;flex-direction:column;gap:2px;padding:7px 10px;background:var(--bg-3);border-radius:7px; }
+.jwt-row--wide { grid-column:1/-1; }
+.jwt-key { font-family:'JetBrains Mono',monospace;font-size:.58rem;text-transform:uppercase;letter-spacing:.10em;color:var(--text-3); }
+.jwt-val { font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text);word-break:break-all; }
+
+.jwt-expiry-bar-wrap { height:5px;border-radius:999px;background:var(--border);overflow:hidden;margin-bottom:14px; }
+.jwt-expiry-bar { height:100%;width:100%;border-radius:999px;background:linear-gradient(90deg,var(--primary),var(--mint));transition:width 1s linear,background .4s; }
+
+.jwt-actions { display:flex;gap:8px; }
+.jwt-action-btn { display:inline-flex;align-items:center;gap:5px;background:var(--bg-3);border:1px solid var(--border);color:var(--text-2);border-radius:8px;padding:7px 13px;font:600 .74rem 'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all .15s;flex:1;justify-content:center;box-shadow:none; }
+.jwt-action-btn:hover { background:var(--primary-dim);color:var(--primary);border-color:var(--primary);transform:none; }
+.jwt-action-btn--danger { color:var(--danger); }
+.jwt-action-btn--danger:hover { background:var(--danger-dim);color:var(--danger);border-color:rgba(255,92,92,.3); }
+
+/* ── Danger zone ── */
+.danger-zone-card { border-color:rgba(255,92,92,.18); }
+.danger-zone-card:hover { border-color:rgba(255,92,92,.35); }
+.delete-confirm-panel input { margin-top:4px; }
+
+/* ── Responsive ── */
+@media(max-width:1024px) {
+  .profile-hero-card { grid-template-columns:auto 1fr;grid-template-rows:auto auto; }
+  .ph-stats-col { grid-column:1/-1; }
+  .profile-grid { grid-template-columns:1fr; }
+}
+@media(max-width:860px) {
+  .profile-hero-card { padding:24px 20px;grid-template-columns:1fr;text-align:center; }
+  .ph-avatar-col { align-items:center; }
+  .ph-info-col   { align-items:center; }
+  .ph-bio { max-width:100%; }
+  .ph-stats-col { justify-content:center; }
+  .pf-row { grid-template-columns:1fr; }
+}
+@media(max-width:600px) {
+  .ph-stats-col { padding:14px 16px; }
+  .ph-stat-divider { height:30px; }
+  .jwt-info-grid { grid-template-columns:1fr; }
+}
+</style>
 
 {% endblock %}
 

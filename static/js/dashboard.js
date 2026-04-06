@@ -1,117 +1,211 @@
+/* =============================================================
+   dashboard.js  —  Interactive dashboard logic
+   - Time-based greeting
+   - Count-up animations
+   - Momentum ring + bar
+   - Score ring + readiness badge
+   - Tier highlights
+   - Recent sessions: live search + status filter
+   - Chart.js charts (trend + by topic)
+   ============================================================= */
 (function () {
-    const root = document.querySelector('.dashboard-layout');
+    'use strict';
+
+    const root = document.getElementById('dashboard-root');
     if (!root) return;
 
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    function clamp(value, min, max) {
-        return Math.min(max, Math.max(min, value));
+    /* ── Helpers ─────────────────────────────── */
+    function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+    function lerp(a, b, t)    { return a + (b - a) * t; }
+    function easeOut(t)       { return 1 - Math.pow(1 - t, 3); }
+
+    function animateValue(from, to, durationMs, decimals, onTick, onDone) {
+        if (reduceMotion) { onTick(to); if (onDone) onDone(); return; }
+        const start = performance.now();
+        function tick(now) {
+            const t = clamp((now - start) / durationMs, 0, 1);
+            onTick(parseFloat((lerp(from, to, easeOut(t))).toFixed(decimals)));
+            if (t < 1) requestAnimationFrame(tick);
+            else if (onDone) onDone();
+        }
+        requestAnimationFrame(tick);
     }
 
-    function animateCounters() {
-        const counters = root.querySelectorAll('.count-up');
-        counters.forEach((counter) => {
-            const target = Number.parseFloat(counter.dataset.value || '0');
-            const decimals = Number.parseInt(counter.dataset.decimals || '0', 10);
+    /* ── 1. Greeting ─────────────────────────── */
+    (function initGreeting() {
+        const el = document.getElementById('greeting-text');
+        if (!el) return;
+        const h = new Date().getHours();
+        el.textContent = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    })();
 
-            if (Number.isNaN(target)) return;
-            // Use a dedicated text node so the inner <span> (e.g. "/10") is not clobbered
-            var textNode = null;
-            for (var i = 0; i < counter.childNodes.length; i++) {
-                if (counter.childNodes[i].nodeType === Node.TEXT_NODE) {
-                    textNode = counter.childNodes[i];
-                    break;
-                }
+    /* ── 2. Count-up KPI values ──────────────── */
+    (function initCounters() {
+        root.querySelectorAll('.count-up').forEach(function(el) {
+            const target   = parseFloat(el.dataset.value || '0');
+            const decimals = parseInt(el.dataset.decimals || '0', 10);
+            if (isNaN(target)) return;
+
+            // Preserve inner <span> (e.g. "/10", "d") by using a dedicated text node
+            let textNode = null;
+            for (let i = 0; i < el.childNodes.length; i++) {
+                if (el.childNodes[i].nodeType === Node.TEXT_NODE) { textNode = el.childNodes[i]; break; }
             }
-            if (!textNode) {
-                textNode = document.createTextNode('');
-                counter.insertBefore(textNode, counter.firstChild);
-            }
+            if (!textNode) { textNode = document.createTextNode(''); el.insertBefore(textNode, el.firstChild); }
 
-            if (reduceMotion) {
-                textNode.textContent = target.toFixed(decimals);
-                return;
-            }
-
-            const duration = 850;
-            const startTime = performance.now();
-
-            function tick(now) {
-                const progress = clamp((now - startTime) / duration, 0, 1);
-                const eased = 1 - Math.pow(1 - progress, 3);
-                const current = target * eased;
-                textNode.textContent = current.toFixed(decimals);
-                if (progress < 1) requestAnimationFrame(tick);
-            }
-
-            requestAnimationFrame(tick);
-        });
-    }
-
-    function updateScoreRing() {
-        const insight = root.querySelector('.dash-insight');
-        const ring = root.querySelector('#score-ring');
-        const valueNode = root.querySelector('#score-ring-value');
-        if (!insight || !ring || !valueNode) return;
-
-        const score = clamp(Number.parseFloat(insight.dataset.score || '0'), 0, 10);
-        const deg = score * 36;
-
-        ring.style.setProperty('--fill', `${deg}deg`);
-        valueNode.textContent = score.toFixed(1);
-    }
-
-    function updateMomentum() {
-        const panel = root.querySelector('.dash-hero-panel');
-        const fill = root.querySelector('#session-momentum-fill');
-        if (!panel || !fill) return;
-
-        const total = Number.parseInt(panel.dataset.total || '0', 10);
-        const completed = Number.parseInt(panel.dataset.completed || '0', 10);
-        const ratio = total > 0 ? clamp((completed / total) * 100, 0, 100) : 0;
-
-        fill.style.width = `${ratio}%`;
-    }
-
-    function initFilters() {
-        const filters = root.querySelectorAll('.chip-filter');
-        const cards = root.querySelectorAll('.recent-item');
-        const emptyState = root.querySelector('#recent-filter-empty');
-
-        if (!filters.length || !cards.length) return;
-
-        filters.forEach((button) => {
-            button.addEventListener('click', () => {
-                const selected = button.dataset.filter;
-                let visibleCount = 0;
-
-                filters.forEach((btn) => btn.classList.remove('is-active'));
-                button.classList.add('is-active');
-
-                cards.forEach((card) => {
-                    const matches = selected === 'all' || card.dataset.status === selected;
-                    card.classList.toggle('is-hidden', !matches);
-                    if (matches) visibleCount += 1;
-                });
-
-                if (emptyState) emptyState.hidden = visibleCount !== 0;
+            animateValue(0, target, 900, decimals, function(v) {
+                textNode.textContent = v.toFixed(decimals);
             });
         });
-    }
+    })();
 
-    animateCounters();
-    updateScoreRing();
-    updateMomentum();
-    initFilters();
+    /* ── 3. Momentum ring + bar ───────────────── */
+    (function initMomentum() {
+        const fill    = document.getElementById('mp-bar-fill');
+        const ring    = document.getElementById('momentum-ring-fill');
+        const pctEl   = document.getElementById('momentum-pct');
+        if (!fill) return;
 
-    /* ──────────────────────────────────────────────────
-       Feature 4 — Progress Charts by Topic
-       Two charts via Chart.js (loaded from CDN):
-       1. Line chart: score trend over last 10 sessions
-       2. Horizontal bar chart: avg score per category
-       Tab switcher toggles between chart panels.
-    ────────────────────────────────────────────────── */
-    function initCharts() {
+        const total     = parseInt(fill.dataset.total     || '0', 10);
+        const completed = parseInt(fill.dataset.completed || '0', 10);
+        const ratio     = total > 0 ? clamp(completed / total, 0, 1) : 0;
+        const pct       = Math.round(ratio * 100);
+
+        // Bar
+        if (!reduceMotion) {
+            setTimeout(function() { fill.style.width = (pct) + '%'; }, 80);
+        } else {
+            fill.style.width = pct + '%';
+        }
+
+        // SVG ring: circumference = 2π×50 ≈ 314
+        const circ = 314;
+        if (ring) {
+            const offset = circ - (ratio * circ);
+            if (!reduceMotion) {
+                setTimeout(function() { ring.style.strokeDashoffset = offset; }, 80);
+            } else {
+                ring.style.strokeDashoffset = offset;
+            }
+        }
+
+        // Percentage text
+        if (pctEl) {
+            animateValue(0, pct, 1000, 0, function(v) { pctEl.textContent = Math.round(v) + '%'; });
+        }
+    })();
+
+    /* ── 4. Score ring + readiness badge ────────── */
+    (function initScoreRing() {
+        const section = root.querySelector('.dash-insight');
+        if (!section) return;
+
+        const score  = clamp(parseFloat(section.dataset.score || '0'), 0, 10);
+        const ring   = document.getElementById('score-ring-fill');
+        const valEl  = document.getElementById('score-ring-value');
+        const badge  = document.getElementById('insight-readiness-badge');
+
+        // Ring: circumference = 2π×68 ≈ 427
+        const circ   = 427;
+        const offset = circ - (score / 10) * circ;
+
+        if (ring) {
+            // Colour by score
+            const colour = score >= 7 ? 'var(--success)' : score >= 5 ? 'var(--warning)' : 'var(--danger)';
+            ring.style.stroke = colour;
+            if (!reduceMotion) {
+                setTimeout(function() { ring.style.strokeDashoffset = offset; }, 100);
+            } else {
+                ring.style.strokeDashoffset = offset;
+            }
+        }
+
+        if (valEl) {
+            animateValue(0, score, 1000, 1, function(v) { valEl.textContent = v.toFixed(1); });
+        }
+
+        // Readiness badge
+        if (badge) {
+            let label, bg, col;
+            if (score >= 7) {
+                label = '✓ Interview ready'; bg = 'var(--success-dim)'; col = 'var(--success)';
+            } else if (score >= 5) {
+                label = '~ Getting there'; bg = 'var(--amber-dim)'; col = 'var(--warning)';
+            } else if (score > 0) {
+                label = '⚡ Needs work'; bg = 'var(--danger-dim)'; col = 'var(--danger)';
+            } else {
+                label = '— No data yet'; bg = 'var(--bg-3)'; col = 'var(--text-3)';
+            }
+            badge.textContent = label;
+            badge.style.background  = bg;
+            badge.style.color       = col;
+            badge.style.borderColor = col;
+        }
+
+        // Highlight active tier
+        root.querySelectorAll('.tier').forEach(function(tier) {
+            const min = parseFloat(tier.dataset.min);
+            const max = parseFloat(tier.dataset.max);
+            const colour = tier.dataset.color;
+            if (score >= min && score < max) {
+                tier.classList.add('is-active');
+                tier.querySelector('.tier-dot').style.background = colour;
+            } else {
+                tier.querySelector('.tier-dot').style.background = 'var(--text-3)';
+            }
+        });
+    })();
+
+    /* ── 5. Recent sessions: search + filter ──── */
+    (function initRecentControls() {
+        const stack    = document.getElementById('recent-stack');
+        const emptyMsg = document.getElementById('recent-filter-empty');
+        const filters  = root.querySelectorAll('.chip-filter');
+        const search   = document.getElementById('recent-search');
+        if (!stack) return;
+
+        const items = Array.from(stack.querySelectorAll('.recent-item'));
+        let activeFilter = 'all';
+        let searchQuery  = '';
+
+        function applyFilters() {
+            let visible = 0;
+            items.forEach(function(item) {
+                const statusOk = activeFilter === 'all' || item.dataset.status === activeFilter;
+                const title    = (item.dataset.title    || '').toLowerCase();
+                const cat      = (item.dataset.category || '').toLowerCase();
+                const q        = searchQuery.toLowerCase();
+                const searchOk = !q || title.includes(q) || cat.includes(q);
+                const show     = statusOk && searchOk;
+                item.classList.toggle('is-hidden', !show);
+                if (show) visible++;
+            });
+            if (emptyMsg) emptyMsg.hidden = visible > 0;
+        }
+
+        // Filter chips
+        filters.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                filters.forEach(function(b) { b.classList.remove('is-active'); });
+                btn.classList.add('is-active');
+                activeFilter = btn.dataset.filter;
+                applyFilters();
+            });
+        });
+
+        // Live search
+        if (search) {
+            search.addEventListener('input', function() {
+                searchQuery = search.value;
+                applyFilters();
+            });
+        }
+    })();
+
+    /* ── 6. Charts ────────────────────────────── */
+    (function initCharts() {
         const section = document.getElementById('dash-charts');
         if (!section) return;
 
@@ -121,18 +215,26 @@
         const trend  = chartData.trend  || { labels: [], scores: [] };
         const topics = chartData.topics || { labels: [], scores: [], counts: [] };
 
-        // Detect CSS variable colours for Chart.js
         const style   = getComputedStyle(document.documentElement);
-        const primary = style.getPropertyValue('--primary').trim() || '#4f46e5';
-        const text2   = style.getPropertyValue('--text-2').trim()  || '#475569';
-        const border  = style.getPropertyValue('--border').trim()  || '#e2e8f0';
-        const surface = style.getPropertyValue('--surface').trim() || '#ffffff';
+        const primary = style.getPropertyValue('--primary').trim() || '#8b6fff';
+        const success = style.getPropertyValue('--success').trim() || '#00ffb3';
+        const text2   = style.getPropertyValue('--text-2').trim()  || '#8f8aad';
+        const border  = style.getPropertyValue('--border').trim()  || 'rgba(130,100,255,.15)';
+        const surface = style.getPropertyValue('--surface').trim() || 'rgba(14,14,26,.88)';
 
-        // Shared Chart.js defaults
-        const baseFont = { family: 'Inter, system-ui, sans-serif', size: 12 };
-        const gridColor = 'rgba(148,163,184,0.15)';
+        const baseFont   = { family: 'JetBrains Mono, Inter, monospace', size: 11 };
+        const gridColor  = 'rgba(148,163,184,0.10)';
+        const tooltipCfg = {
+            backgroundColor: surface,
+            titleColor: primary,
+            bodyColor: text2,
+            borderColor: border,
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 8,
+        };
 
-        /* ── Tab switcher ── */
+        // Tab switcher
         const tabs = section.querySelectorAll('.chart-tab');
         const panels = {
             trend:  document.getElementById('chart-panel-trend'),
@@ -148,21 +250,12 @@
             });
         });
 
-        /* ── Load Chart.js then draw ── */
-        if (window.Chart) {
-            drawCharts();
-        } else {
-            var script = document.createElement('script');
-            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
-            script.onload = drawCharts;
-            document.head.appendChild(script);
-        }
-
-        function drawCharts() {
-            /* ── 1. Score trend line chart ── */
+        // Load Chart.js then draw
+        function draw() {
+            /* 1. Trend line */
             const trendEmpty = document.getElementById('chart-trend-empty');
             const trendWrap  = document.getElementById('chart-trend-wrap');
-            if (!trend.scores.length) {
+            if (!trend.scores || !trend.scores.length) {
                 if (trendEmpty) trendEmpty.hidden = false;
                 if (trendWrap)  trendWrap.hidden  = true;
             } else {
@@ -178,55 +271,38 @@
                             borderWidth: 2.5,
                             pointBackgroundColor: primary,
                             pointRadius: 4,
-                            pointHoverRadius: 6,
+                            pointHoverRadius: 7,
                             fill: true,
-                            tension: 0.35,
+                            tension: 0.38,
                         }],
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
+                        animation: { duration: reduceMotion ? 0 : 900, easing: 'easeOutQuart' },
                         plugins: {
                             legend: { display: false },
-                            tooltip: {
-                                backgroundColor: surface,
-                                titleColor: primary,
-                                bodyColor: text2,
-                                borderColor: border,
-                                borderWidth: 1,
-                                padding: 10,
-                                callbacks: {
-                                    label: function(ctx) { return ' Score: ' + ctx.parsed.y + ' / 10'; },
-                                },
-                            },
+                            tooltip: Object.assign({}, tooltipCfg, {
+                                callbacks: { label: function(c) { return ' Score: ' + c.parsed.y + ' / 10'; } },
+                            }),
                         },
                         scales: {
-                            x: {
-                                grid: { color: gridColor },
-                                ticks: { color: text2, font: baseFont },
-                                border: { color: border },
-                            },
-                            y: {
-                                min: 0, max: 10,
-                                grid: { color: gridColor },
-                                ticks: { color: text2, font: baseFont, stepSize: 2 },
-                                border: { color: border },
-                            },
+                            x: { grid: { color: gridColor }, ticks: { color: text2, font: baseFont }, border: { color: border } },
+                            y: { min: 0, max: 10, grid: { color: gridColor }, ticks: { color: text2, font: baseFont, stepSize: 2 }, border: { color: border } },
                         },
                     },
                 });
             }
 
-            /* ── 2. Category bar chart ── */
+            /* 2. Topics bar */
             const topicsEmpty = document.getElementById('chart-topics-empty');
             const topicsWrap  = document.getElementById('chart-topics-wrap');
-            if (!topics.scores.length) {
+            if (!topics.scores || !topics.scores.length) {
                 if (topicsEmpty) topicsEmpty.hidden = false;
                 if (topicsWrap)  topicsWrap.hidden  = true;
             } else {
-                // Colour each bar by score: green >= 7, amber 5-7, red < 5
                 const barColors = topics.scores.map(function(s) {
-                    return s >= 7 ? '#10b981' : (s >= 5 ? '#f59e0b' : '#ef4444');
+                    return s >= 7 ? '#10b981' : s >= 5 ? '#f59e0b' : '#ef4444';
                 });
                 new window.Chart(document.getElementById('chart-topics'), {
                     type: 'bar',
@@ -239,47 +315,42 @@
                             borderColor: barColors,
                             borderWidth: 1.5,
                             borderRadius: 6,
+                            borderSkipped: false,
                         }],
                     },
                     options: {
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: true,
+                        animation: { duration: reduceMotion ? 0 : 900, easing: 'easeOutQuart' },
                         plugins: {
                             legend: { display: false },
-                            tooltip: {
-                                backgroundColor: surface,
-                                titleColor: text2,
-                                bodyColor: primary,
-                                borderColor: border,
-                                borderWidth: 1,
-                                padding: 10,
+                            tooltip: Object.assign({}, tooltipCfg, {
                                 callbacks: {
-                                    label: function(ctx) {
-                                        const i = ctx.dataIndex;
-                                        return ' ' + ctx.parsed.x + '/10  (' + (topics.counts[i] || 0) + ' sessions)';
+                                    label: function(c) {
+                                        const i = c.dataIndex;
+                                        return ' ' + c.parsed.x + '/10  (' + (topics.counts[i] || 0) + ' sessions)';
                                     },
                                 },
-                            },
+                            }),
                         },
                         scales: {
-                            x: {
-                                min: 0, max: 10,
-                                grid: { color: gridColor },
-                                ticks: { color: text2, font: baseFont, stepSize: 2 },
-                                border: { color: border },
-                            },
-                            y: {
-                                grid: { display: false },
-                                ticks: { color: text2, font: baseFont },
-                                border: { color: 'transparent' },
-                            },
+                            x: { min: 0, max: 10, grid: { color: gridColor }, ticks: { color: text2, font: baseFont, stepSize: 2 }, border: { color: border } },
+                            y: { grid: { display: false }, ticks: { color: text2, font: baseFont }, border: { color: 'transparent' } },
                         },
                     },
                 });
             }
         }
-    }
 
-    initCharts();
+        if (window.Chart) {
+            draw();
+        } else {
+            var s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+            s.onload = draw;
+            document.head.appendChild(s);
+        }
+    })();
+
 })();
