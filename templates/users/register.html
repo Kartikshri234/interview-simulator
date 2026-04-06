@@ -1,63 +1,616 @@
 {% extends 'base.html' %}
 {% block title %}Create Account | InterviewAI{% endblock %}
 
+{% block extra_head %}
+<style>
+/* ── Override page-shell ── */
+.page-shell {
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ── Full split layout ── */
+.nexus-auth {
+  min-height: calc(100vh - 64px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+
+/* ── Left decorative panel ── */
+.nexus-auth-left {
+  position: relative;
+  background: var(--bg-2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 52px;
+  border-right: 1px solid var(--border);
+}
+.nexus-auth-left::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background:
+    radial-gradient(ellipse 55% 55% at 25% 35%, var(--cyan-glow) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 50% at 75% 65%, var(--primary-glow) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 45% at 55% 20%, var(--pink-glow) 0%, transparent 55%);
+  animation: mesh-drift2 12s ease-in-out infinite alternate;
+  z-index: 0;
+}
+@keyframes mesh-drift2 {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(2%,3%) scale(1.04); }
+  100% { transform: translate(-2%,-2%) scale(0.98); }
+}
+.nexus-auth-left::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+  z-index: 1;
+}
+.nexus-auth-left-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 380px;
+}
+
+.nexus-left-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-bottom: 44px;
+  letter-spacing: -0.03em;
+}
+.nexus-left-logo .brand-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 14px var(--primary-glow);
+  animation: pulse-dot 2.5s ease-in-out infinite;
+}
+
+/* Steps visual */
+.nexus-steps {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 40px;
+  text-align: left;
+}
+.nexus-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  backdrop-filter: blur(12px);
+  animation: step-in 0.6s cubic-bezier(0.23,1,0.32,1) both;
+}
+.nexus-step:nth-child(1) { animation-delay: 0.1s; }
+.nexus-step:nth-child(2) { animation-delay: 0.25s; }
+.nexus-step:nth-child(3) { animation-delay: 0.4s; }
+@keyframes step-in {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.nexus-step-num {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  background: var(--primary-dim);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+.nexus-step-body {}
+.nexus-step-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+  letter-spacing: -0.02em;
+}
+.nexus-step-desc {
+  font-size: 0.76rem;
+  color: var(--text-3);
+  font-family: 'Space Grotesk', sans-serif;
+  line-height: 1.5;
+}
+
+.nexus-left-headline {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1.5rem, 2.8vw, 2rem);
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin-bottom: 12px;
+}
+.nexus-left-headline span { color: var(--cyan); }
+.nexus-left-sub { font-size: 0.86rem; color: var(--text-2); line-height: 1.65; }
+
+/* ── Right: form panel ── */
+.nexus-auth-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 48px 52px;
+  background: var(--bg);
+  overflow-y: auto;
+}
+.nexus-form-wrap {
+  width: 100%;
+  max-width: 460px;
+}
+.nexus-form-header { margin-bottom: 30px; }
+.nexus-form-eyebrow {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nexus-form-eyebrow::before {
+  content: '';
+  width: 20px; height: 1px;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+.nexus-form-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+.nexus-form-subtitle { font-size: 0.875rem; color: var(--text-2); line-height: 1.6; }
+
+/* ── Fields ── */
+.nexus-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 14px;
+}
+.nexus-field-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.64rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+.nexus-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.nexus-input-icon {
+  position: absolute;
+  left: 14px;
+  width: 17px; height: 17px;
+  color: var(--text-3);
+  pointer-events: none;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+.nexus-input-wrap:focus-within .nexus-input-icon { color: var(--primary); }
+.nexus-input {
+  width: 100%;
+  background: var(--bg-3) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  color: var(--text) !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 0.9rem !important;
+  padding: 13px 14px 13px 44px !important;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s !important;
+}
+.nexus-input:focus {
+  outline: none !important;
+  border-color: var(--primary) !important;
+  background: var(--bg-2) !important;
+  box-shadow: 0 0 0 3px var(--primary-dim), 0 0 20px var(--primary-dim) !important;
+}
+.nexus-input::placeholder { color: var(--text-3) !important; }
+.nexus-input.no-icon { padding-left: 14px !important; }
+
+/* Select styling */
+.nexus-select {
+  width: 100%;
+  background: var(--bg-3) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  color: var(--text) !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 0.9rem !important;
+  padding: 13px 36px 13px 14px !important;
+  appearance: none !important;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235c5a80' d='M6 8L1 3h10z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+.nexus-select:focus {
+  outline: none !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px var(--primary-dim) !important;
+}
+
+/* Password toggle */
+.nexus-pw-toggle {
+  position: absolute;
+  right: 13px;
+  background: none; border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 4px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: none; transform: none;
+  transition: color 0.15s;
+}
+.nexus-pw-toggle:hover { color: var(--primary); background: none; box-shadow: none; transform: none; }
+.nexus-pw-toggle svg { width: 16px; height: 16px; }
+
+/* Two-col grid for fields */
+.nexus-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Progress bar for password strength */
+.nexus-pw-strength {
+  margin-top: 6px;
+  display: flex;
+  gap: 4px;
+}
+.pw-seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--border);
+  transition: background 0.3s;
+}
+.pw-seg.active-weak   { background: var(--danger); }
+.pw-seg.active-fair   { background: var(--warning); }
+.pw-seg.active-strong { background: var(--success); }
+
+/* ── Submit button ── */
+.nexus-submit {
+  width: 100%;
+  padding: 14px 20px !important;
+  font-size: 0.95rem !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 700 !important;
+  border-radius: 12px !important;
+  margin-top: 8px;
+  letter-spacing: -0.01em;
+}
+
+/* Section divider */
+.nexus-section-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-3);
+  margin: 20px 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nexus-section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── Footer ── */
+.nexus-footer {
+  text-align: center;
+  margin-top: 22px;
+  font-size: 0.875rem;
+  color: var(--text-3);
+}
+.nexus-footer a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.nexus-footer a:hover { text-shadow: 0 0 12px var(--primary-glow); }
+
+/* Error */
+.nexus-error {
+  background: var(--danger-dim);
+  border: 1px solid rgba(255,45,120,0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--danger);
+  margin-bottom: 16px;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Mobile brand */
+.nexus-mobile-brand {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 28px;
+  letter-spacing: -0.03em;
+}
+.nexus-mobile-brand .brand-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
+  animation: pulse-dot 2.5s ease-in-out infinite;
+}
+
+/* ── Responsive ── */
+@media (max-width: 860px) {
+  .nexus-auth { grid-template-columns: 1fr; }
+  .nexus-auth-left { display: none; }
+  .nexus-auth-right {
+    padding: 28px 20px 52px;
+    min-height: calc(100vh - 64px);
+  }
+  .nexus-form-wrap { max-width: 100%; }
+  .nexus-grid-2 { grid-template-columns: 1fr; }
+  .nexus-mobile-brand { display: flex !important; }
+  .nexus-input {
+    font-size: 16px !important;
+    padding: 14px 14px 14px 46px !important;
+  }
+  .nexus-input.no-icon { padding-left: 14px !important; }
+  .nexus-select { font-size: 16px !important; }
+  .nexus-submit { padding: 15px 20px !important; font-size: 1rem !important; }
+  .nexus-form-title { font-size: 1.9rem; }
+}
+@media (max-width: 420px) {
+  .nexus-auth-right { padding: 22px 16px 44px; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="auth-wrap">
-  <div class="auth-card wide auth-card-refresh reveal">
+<div class="nexus-auth">
 
-    <div class="auth-logo">
-      <span class="brand-dot"></span> InterviewAI
+  <!-- ── LEFT: How it works ── -->
+  <div class="nexus-auth-left">
+    <div class="nexus-auth-left-content">
+      <div class="nexus-left-logo">
+        <span class="brand-dot"></span>
+        InterviewAI
+      </div>
+
+      <div class="nexus-steps">
+        <div class="nexus-step">
+          <div class="nexus-step-num">01</div>
+          <div class="nexus-step-body">
+            <div class="nexus-step-title">Pick your stack</div>
+            <div class="nexus-step-desc">Choose from Python, DSA, System Design, Behavioral, and more.</div>
+          </div>
+        </div>
+        <div class="nexus-step">
+          <div class="nexus-step-num">02</div>
+          <div class="nexus-step-body">
+            <div class="nexus-step-title">Answer AI questions</div>
+            <div class="nexus-step-desc">Get fresh, difficulty-adaptive questions every session.</div>
+          </div>
+        </div>
+        <div class="nexus-step">
+          <div class="nexus-step-num">03</div>
+          <div class="nexus-step-body">
+            <div class="nexus-step-title">See your score instantly</div>
+            <div class="nexus-step-desc">Detailed feedback, ideal answers, and readiness rating.</div>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="nexus-left-headline">
+        Built for devs who<br>want to <span>ship</span> it.
+      </h2>
+      <p class="nexus-left-sub">
+        No fluff. Just real practice that translates to real offers.
+      </p>
     </div>
+  </div>
 
-    <h1>Create your account</h1>
-    <p class="subtitle">Set your target role and experience level for personalized interview sessions tailored to where you're headed.</p>
+  <!-- ── RIGHT: Register form ── -->
+  <div class="nexus-auth-right">
+    <div class="nexus-form-wrap reveal">
 
-    <form method="post" action="{% url 'register' %}">
-      {% csrf_token %}
-
-      <div class="grid two">
-        <label>
-          Username
-          <input type="text" name="username" required autocomplete="username" placeholder="yourname">
-        </label>
-        <label>
-          Email address
-          <input type="email" name="email" required autocomplete="email" placeholder="you@example.com">
-        </label>
+      <!-- Mobile brand -->
+      <div class="nexus-mobile-brand">
+        <span class="brand-dot"></span>
+        InterviewAI
       </div>
 
-      <div class="grid two">
-        <label>
-          Password
-          <input type="password" name="password" required autocomplete="new-password" minlength="8" placeholder="Min. 8 characters">
-        </label>
-        <label>
-          Confirm password
-          <input type="password" name="password2" required autocomplete="new-password" minlength="8" placeholder="Repeat password">
-        </label>
+      <div class="nexus-form-header">
+        <div class="nexus-form-eyebrow">New account</div>
+        <h1 class="nexus-form-title">Create your profile</h1>
+        <p class="nexus-form-subtitle">Set your target role and we'll tailor everything to you.</p>
       </div>
 
-      <div class="grid two">
-        <label>
-          Target role <span style="color:var(--text-3);font-size:0.72rem;font-weight:400;">(optional)</span>
-          <input type="text" name="target_role" placeholder="e.g. Backend Engineer">
-        </label>
-        <label>
-          Experience level
-          <select name="experience_level">
-            <option value="junior">Junior</option>
-            <option value="mid" selected>Mid-level</option>
-            <option value="senior">Senior</option>
-          </select>
-        </label>
+      {% if messages %}
+        {% for message in messages %}
+          <div class="nexus-error">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" action="{% url 'register' %}">
+        {% csrf_token %}
+
+        <!-- Account info -->
+        <div class="nexus-section-label">Account info</div>
+
+        <div class="nexus-grid-2">
+          <div class="nexus-field">
+            <div class="nexus-field-label">Username</div>
+            <div class="nexus-input-wrap">
+              <input class="nexus-input" type="text" name="username" required autocomplete="username" placeholder="yourname">
+              <svg class="nexus-input-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 14s-1-4-6-4-6 4-6 4"/>
+                <circle cx="10" cy="7" r="3"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="nexus-field">
+            <div class="nexus-field-label">Email</div>
+            <div class="nexus-input-wrap">
+              <input class="nexus-input" type="email" name="email" required autocomplete="email" placeholder="you@example.com">
+              <svg class="nexus-input-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="4" width="16" height="12" rx="2"/>
+                <path d="M2 7l8 5 8-5"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Passwords -->
+        <div class="nexus-section-label">Set password</div>
+
+        <div class="nexus-grid-2">
+          <div class="nexus-field">
+            <div class="nexus-field-label">Password</div>
+            <div class="nexus-input-wrap">
+              <input class="nexus-input" type="password" name="password" id="reg-password" required autocomplete="new-password" minlength="8" placeholder="Min. 8 characters">
+              <svg class="nexus-input-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="9" width="14" height="10" rx="2"/>
+                <path d="M7 9V7a3 3 0 0 1 6 0v2"/>
+              </svg>
+              <button type="button" class="nexus-pw-toggle" id="pw-toggle" aria-label="Toggle password">
+                <svg id="pw-eye" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
+                  <circle cx="10" cy="10" r="2.5"/>
+                </svg>
+              </button>
+            </div>
+            <!-- Strength bar -->
+            <div class="nexus-pw-strength">
+              <div class="pw-seg" id="ps1"></div>
+              <div class="pw-seg" id="ps2"></div>
+              <div class="pw-seg" id="ps3"></div>
+            </div>
+          </div>
+
+          <div class="nexus-field">
+            <div class="nexus-field-label">Confirm password</div>
+            <div class="nexus-input-wrap">
+              <input class="nexus-input" type="password" name="password2" required autocomplete="new-password" minlength="8" placeholder="Repeat password">
+              <svg class="nexus-input-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 12l2 2 4-4"/>
+                <rect x="3" y="9" width="14" height="10" rx="2"/>
+                <path d="M7 9V7a3 3 0 0 1 6 0v2"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Role & level -->
+        <div class="nexus-section-label">Your goal</div>
+
+        <div class="nexus-grid-2">
+          <div class="nexus-field">
+            <div class="nexus-field-label">Target role <span style="opacity:.5;font-weight:400;">(optional)</span></div>
+            <div class="nexus-input-wrap">
+              <input class="nexus-input" type="text" name="target_role" placeholder="e.g. Backend Engineer">
+              <svg class="nexus-input-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2H8a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2V4a2 2 0 0 0-2-2z"/>
+                <path d="M8 6V4h4v2"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="nexus-field">
+            <div class="nexus-field-label">Experience level</div>
+            <select class="nexus-select" name="experience_level">
+              <option value="junior">Junior</option>
+              <option value="mid" selected>Mid-level</option>
+              <option value="senior">Senior</option>
+            </select>
+          </div>
+        </div>
+
+        <button type="submit" class="nexus-submit">
+          Create account →
+        </button>
+      </form>
+
+      <div class="nexus-footer">
+        Already have an account? <a href="{% url 'login' %}">Sign in →</a>
       </div>
-
-      <button type="submit" class="auth-submit-btn">Create account →</button>
-    </form>
-
-    <div class="auth-footer">
-      Already have an account? <a href="{% url 'login' %}">Sign in →</a>
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  // Password toggle
+  const pwInput  = document.getElementById('reg-password');
+  const pwToggle = document.getElementById('pw-toggle');
+  const pwEye    = document.getElementById('pw-eye');
+  if (pwToggle) {
+    pwToggle.addEventListener('click', function () {
+      const isHidden = pwInput.type === 'password';
+      pwInput.type = isHidden ? 'text' : 'password';
+      pwEye.innerHTML = isHidden
+        ? '<line x1="1" y1="1" x2="19" y2="19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8.5 8.5A2.5 2.5 0 0 0 12.5 12.5"/><path d="M10.5 4.1C10.3 4 10.2 4 10 4c-5.5 0-9 6-9 6s1.2 1.9 3.3 3.4"/><path d="M15 15c1.7-1.5 3-3 3-3s-3.5-6-9-6"/>'
+        : '<path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="10" cy="10" r="2.5"/>';
+    });
+  }
+
+  // Password strength meter
+  const ps = [document.getElementById('ps1'), document.getElementById('ps2'), document.getElementById('ps3')];
+  if (pwInput) {
+    pwInput.addEventListener('input', function () {
+      const v = this.value;
+      let strength = 0;
+      if (v.length >= 8) strength++;
+      if (/[A-Z]/.test(v) && /[0-9]/.test(v)) strength++;
+      if (/[^A-Za-z0-9]/.test(v)) strength++;
+
+      const cls = ['active-weak', 'active-fair', 'active-strong'];
+      ps.forEach(function (s, i) {
+        s.className = 'pw-seg';
+        if (i < strength) s.classList.add(cls[Math.min(strength - 1, 2)]);
+      });
+    });
+  }
+})();
+</script>
 {% endblock %}

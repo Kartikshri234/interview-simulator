@@ -3,12 +3,17 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#07070f">
   <script>document.documentElement.classList.add('js');</script>
   <title>{% block title %}AI Interview Simulator{% endblock %}</title>
+
+  <!-- Fonts: Clash Display (display) + Plus Jakarta Sans (body) + JetBrains Mono (mono) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
   <link rel="stylesheet" href="{% static 'css/features.css' %}">
   {% block extra_head %}{% endblock %}
@@ -21,7 +26,9 @@
       <span class="brand-dot"></span>
       InterviewAI
     </a>
-    <nav class="nav-links">
+
+    <!-- Desktop nav -->
+    <nav class="nav-links" id="desktop-nav">
       {% if request.user.is_authenticated %}
         <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="nav-active"{% endif %}>Dashboard</a>
         <a href="{% url 'new_interview' %}" {% if request.resolver_match.url_name == 'new_interview' %}class="nav-active"{% endif %}>New Session</a>
@@ -29,21 +36,14 @@
         <a href="{% url 'resume_screening' %}" {% if request.resolver_match.url_name == 'resume_screening' %}class="nav-active"{% endif %}>Resume AI</a>
         <a href="{% url 'bookmarks' %}" {% if request.resolver_match.url_name == 'bookmarks' %}class="nav-active"{% endif %}>Bookmarks</a>
         <a href="{% url 'profile' %}" {% if request.resolver_match.url_name == 'profile' %}class="nav-active"{% endif %}>Profile</a>
-        <button type="button"
-           class="btn-link danger"
-           id="logout-link"
-           onclick="doLogout()">
-          Logout
-        </button>
+        <button type="button" class="btn-link danger" id="logout-link" onclick="doLogout()">Logout</button>
       {% else %}
         <a href="{% url 'login' %}">Sign in</a>
         <a href="{% url 'register' %}" class="btn-link">Get started →</a>
       {% endif %}
-
-      <!-- Settings button -->
       <button class="settings-btn" id="settings-open-btn" title="Settings" aria-label="Open settings">
         <span class="settings-btn-inner">
-          <svg class="settings-btn-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg class="settings-btn-icon" viewBox="0 0 20 20" fill="none">
             <line x1="4" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
             <line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
             <line x1="4" y1="15" x2="16" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
@@ -54,7 +54,42 @@
         </span>
       </button>
     </nav>
+
+    <!-- Mobile: settings + hamburger -->
+    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+      <button class="settings-btn" id="settings-open-btn-mobile" title="Settings" aria-label="Open settings" style="display:none;">
+        <span class="settings-btn-inner">
+          <svg class="settings-btn-icon" viewBox="0 0 20 20" fill="none">
+            <line x1="4" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <line x1="4" y1="15" x2="16" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            <circle cx="7" cy="5" r="2" fill="currentColor" stroke="none"/>
+            <circle cx="13" cy="10" r="2" fill="currentColor" stroke="none"/>
+            <circle cx="8" cy="15" r="2" fill="currentColor" stroke="none"/>
+          </svg>
+        </span>
+      </button>
+      <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </header>
+
+  <!-- Mobile drawer -->
+  <nav class="nav-mobile-drawer" id="nav-mobile-drawer" aria-label="Mobile navigation">
+    {% if request.user.is_authenticated %}
+      <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="nav-active"{% endif %}>🏠 Dashboard</a>
+      <a href="{% url 'new_interview' %}" {% if request.resolver_match.url_name == 'new_interview' %}class="nav-active"{% endif %}>➕ New Session</a>
+      <a href="{% url 'history' %}" {% if request.resolver_match.url_name == 'history' %}class="nav-active"{% endif %}>📋 History</a>
+      <a href="{% url 'resume_screening' %}" {% if request.resolver_match.url_name == 'resume_screening' %}class="nav-active"{% endif %}>📄 Resume AI</a>
+      <a href="{% url 'bookmarks' %}" {% if request.resolver_match.url_name == 'bookmarks' %}class="nav-active"{% endif %}>🔖 Bookmarks</a>
+      <a href="{% url 'profile' %}" {% if request.resolver_match.url_name == 'profile' %}class="nav-active"{% endif %}>👤 Profile</a>
+      <button type="button" class="btn-link danger" onclick="doLogout()" style="margin-top:4px;">Logout</button>
+    {% else %}
+      <a href="{% url 'login' %}">Sign in</a>
+      <a href="{% url 'register' %}" class="btn-link">Get started →</a>
+    {% endif %}
+  </nav>
 
   <!-- ── Settings overlay ── -->
   <div class="settings-overlay" id="settings-overlay"></div>
@@ -78,61 +113,50 @@
     </div>
 
     <div class="settings-body">
-
-      <!-- Theme -->
       <div class="settings-section">
         <div class="settings-section-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8"/><path d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 12 21a9.003 9.003 0 0 0 8.354-5.646z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 12 21a9.003 9.003 0 0 0 8.354-5.646z"/></svg>
           <h3>Appearance</h3>
         </div>
-        <p class="settings-section-desc">Choose your visual theme. Your preference is saved automatically.</p>
+        <p class="settings-section-desc">Choose your visual theme. Saved automatically.</p>
         <div class="theme-swatches">
           <div class="theme-swatch">
             <input type="radio" name="theme" id="theme-dark" value="dark">
             <label for="theme-dark">
-              <div class="swatch-preview swatch-dark">
-                <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
-              </div>
+              <div class="swatch-preview swatch-dark"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>
               Void Dark
             </label>
           </div>
           <div class="theme-swatch">
             <input type="radio" name="theme" id="theme-light" value="light">
             <label for="theme-light">
-              <div class="swatch-preview swatch-light">
-                <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
-              </div>
+              <div class="swatch-preview swatch-light"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>
               Soft Light
             </label>
           </div>
           <div class="theme-swatch">
             <input type="radio" name="theme" id="theme-blue" value="blue">
             <label for="theme-blue">
-              <div class="swatch-preview swatch-blue">
-                <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
-              </div>
-              Neon Blue
+              <div class="swatch-preview swatch-blue"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>
+              Cyber Blue
             </label>
           </div>
           <div class="theme-swatch">
             <input type="radio" name="theme" id="theme-rose" value="rose">
             <label for="theme-rose">
-              <div class="swatch-preview swatch-rose">
-                <span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span>
-              </div>
-              Hot Pink
+              <div class="swatch-preview swatch-rose"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>
+              Hot Coral
             </label>
           </div>
         </div>
       </div>
 
-      <!-- Font size -->
       <div class="settings-section">
         <div class="settings-section-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
           <h3>Font Size</h3>
         </div>
-        <p class="settings-section-desc">Adjust the base text size across the app.</p>
+        <p class="settings-section-desc">Adjust base text size.</p>
         <div class="font-size-row">
           <button id="font-decrease" aria-label="Decrease font size">−</button>
           <span class="font-size-label" id="font-size-label">15px</span>
@@ -140,7 +164,6 @@
         </div>
       </div>
 
-      <!-- Preferences -->
       <div class="settings-section">
         <div class="settings-section-label">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -152,24 +175,17 @@
             <span>Compact mode</span>
             <small>Tighter padding, more content visible</small>
           </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="pref-compact">
-            <span class="toggle-track"></span>
-          </label>
+          <label class="toggle-switch"><input type="checkbox" id="pref-compact"><span class="toggle-track"></span></label>
         </div>
         <div class="toggle-row">
           <div class="toggle-label">
             <span>Animations</span>
             <small>Smooth reveal and transition effects</small>
           </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="pref-animations" checked>
-            <span class="toggle-track"></span>
-          </label>
+          <label class="toggle-switch"><input type="checkbox" id="pref-animations" checked><span class="toggle-track"></span></label>
         </div>
       </div>
-
-    </div><!-- /settings-body -->
+    </div>
   </aside>
 
   <!-- ── Main content ── -->
@@ -186,75 +202,97 @@
 
   <script src="{% static 'js/common.js' %}"></script>
 
-  <!-- Settings panel JS -->
   <script>
   (function () {
-    function get(k, def) {
-      try { return localStorage.getItem(k) ?? def; } catch { return def; }
+    /* ── Mobile hamburger ── */
+    var hamburger = document.getElementById('nav-hamburger');
+    var drawer    = document.getElementById('nav-mobile-drawer');
+    var mobileSettings = document.getElementById('settings-open-btn-mobile');
+
+    // Show mobile controls only on small screens
+    function checkMobile() {
+      var isMobile = window.innerWidth <= 860;
+      if (hamburger) hamburger.style.display = isMobile ? 'flex' : 'none';
+      if (mobileSettings) mobileSettings.style.display = isMobile ? 'flex' : 'none';
     }
-    function set(k, v) {
-      try { localStorage.setItem(k, v); } catch {}
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    if (hamburger) {
+      hamburger.addEventListener('click', function () {
+        var open = drawer.classList.toggle('open');
+        hamburger.classList.toggle('open', open);
+        hamburger.setAttribute('aria-expanded', open);
+      });
+    }
+    // Close drawer on link click
+    if (drawer) {
+      drawer.querySelectorAll('a, button').forEach(function(el) {
+        el.addEventListener('click', function() {
+          drawer.classList.remove('open');
+          if (hamburger) { hamburger.classList.remove('open'); hamburger.setAttribute('aria-expanded', 'false'); }
+        });
+      });
     }
 
-    const html = document.documentElement;
-    let currentTheme = get('ui-theme', 'dark');
+    /* ── Settings panel ── */
+    function get(k, def) { try { return localStorage.getItem(k) ?? def; } catch { return def; } }
+    function set(k, v)   { try { localStorage.setItem(k, v); } catch {} }
+
+    var html = document.documentElement;
+    var currentTheme = get('ui-theme', 'dark');
 
     function applyTheme(t) {
       currentTheme = t;
       html.setAttribute('data-theme', t);
       set('ui-theme', t);
-      const radio = document.getElementById('theme-' + t);
-      if (radio) radio.checked = true;
+      var r = document.getElementById('theme-' + t);
+      if (r) r.checked = true;
+      // Update meta theme-color
+      var mc = document.querySelector('meta[name="theme-color"]');
+      var colors = { dark:'#07070f', light:'#f5f3ff', blue:'#020a14', rose:'#0f0205' };
+      if (mc) mc.content = colors[t] || '#07070f';
     }
     applyTheme(currentTheme);
     document.querySelectorAll('input[name="theme"]').forEach(function (r) {
       r.addEventListener('change', function () { applyTheme(this.value); });
     });
 
-    const FONT_MIN = 13, FONT_MAX = 19;
-    let fontSize = parseInt(get('ui-font-size', '15'), 10);
+    var FONT_MIN = 13, FONT_MAX = 19;
+    var fontSize = parseInt(get('ui-font-size', '15'), 10);
     function applyFontSize(s) {
       fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, s));
       document.body.style.fontSize = fontSize + 'px';
       set('ui-font-size', fontSize);
-      const lbl = document.getElementById('font-size-label');
+      var lbl = document.getElementById('font-size-label');
       if (lbl) lbl.textContent = fontSize + 'px';
     }
     applyFontSize(fontSize);
     document.getElementById('font-decrease').addEventListener('click', function () { applyFontSize(fontSize - 1); });
     document.getElementById('font-increase').addEventListener('click', function () { applyFontSize(fontSize + 1); });
 
-    const compactCheck = document.getElementById('pref-compact');
-    let isCompact = get('ui-compact', 'false') === 'true';
-    function applyCompact(v) {
-      isCompact = v;
-      document.body.classList.toggle('compact-mode', v);
-      set('ui-compact', v);
-      compactCheck.checked = v;
-    }
+    var compactCheck = document.getElementById('pref-compact');
+    var isCompact = get('ui-compact', 'false') === 'true';
+    function applyCompact(v) { isCompact = v; document.body.classList.toggle('compact-mode', v); set('ui-compact', v); compactCheck.checked = v; }
     applyCompact(isCompact);
     compactCheck.addEventListener('change', function () { applyCompact(this.checked); });
 
-    const animCheck = document.getElementById('pref-animations');
-    let animOn = get('ui-animations', 'true') === 'true';
+    var animCheck = document.getElementById('pref-animations');
+    var animOn = get('ui-animations', 'true') === 'true';
     function applyAnimations(v) {
-      animOn = v;
-      set('ui-animations', v);
-      animCheck.checked = v;
-      if (!v) {
-        document.querySelectorAll('.reveal').forEach(function (el) {
-          el.classList.add('is-visible');
-        });
-      }
+      animOn = v; set('ui-animations', v); animCheck.checked = v;
+      if (!v) { document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('is-visible'); }); }
     }
     applyAnimations(animOn);
     animCheck.addEventListener('change', function () { applyAnimations(this.checked); });
 
-    const panel   = document.getElementById('settings-panel');
-    const overlay = document.getElementById('settings-overlay');
+    var panel   = document.getElementById('settings-panel');
+    var overlay = document.getElementById('settings-overlay');
     function openPanel()  { panel.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
     function closePanel() { panel.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; }
+
     document.getElementById('settings-open-btn').addEventListener('click', openPanel);
+    if (mobileSettings) mobileSettings.addEventListener('click', openPanel);
     document.getElementById('settings-close-btn').addEventListener('click', closePanel);
     overlay.addEventListener('click', closePanel);
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });

@@ -8,10 +8,10 @@
 /* ── Page-level overrides that sit on top of app.css ── */
 
 /* Hero */
-.rs-hero        { padding: 36px 40px 28px; }
-.rs-kicker      { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--primary); margin-bottom: 10px; }
-.rs-hero h1     { margin: 0 0 8px; }
-.rs-hero p      { color: var(--text-2); font-size: 0.92rem; max-width: 60ch; margin: 0; }
+.rs-hero        { padding: 28px 34px 22px; }
+.rs-kicker      { font-family: 'JetBrains Mono', monospace; font-size: 0.63rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--primary); margin-bottom: 10px; }
+.rs-hero h1     { margin: 0 0 8px; font-family: 'Clash Display', 'Plus Jakarta Sans', sans-serif; }
+.rs-hero p      { color: var(--text-2); font-size: 0.90rem; max-width: 60ch; margin: 0; }
 
 /* Two-column layout once results appear */
 .rs-layout      { display: grid; gap: 20px; align-items: start; }
@@ -20,14 +20,14 @@
 }
 
 /* Form panel */
-.rs-form-panel  { padding: 28px 32px; }
+.rs-form-panel  { padding: 24px 28px; }
 
 /* Field label */
 .rs-field-label {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -52,15 +52,15 @@
 /* Textarea */
 .rs-textarea {
   width: 100%;
-  min-height: 160px;
-  border-radius: 10px;
+  min-height: 155px;
+  border-radius: 12px;
   border: 1px solid var(--border);
-  padding: 14px 16px;
+  padding: 13px 15px;
   resize: vertical;
-  font: 400 0.92rem 'Inter', sans-serif;
-  background: var(--bg-2);
+  font: 400 16px 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg-3);
   color: var(--text);
-  line-height: 1.6;
+  line-height: 1.65;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .rs-textarea:focus {
@@ -106,8 +106,8 @@
   transform: translateY(-2px);
 }
 .rs-drop-icon  { color: var(--primary); opacity: 0.75; margin-bottom: 4px; }
-.rs-drop-title { font-weight: 600; font-size: 0.92rem; color: var(--text); }
-.rs-drop-sub   { font-size: 0.78rem; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+.rs-drop-title { font-weight: 700; font-size: 0.90rem; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; }
+.rs-drop-sub   { font-size: 0.70rem; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
 
 /* File chips */
 .rs-file-list  { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
@@ -139,9 +139,10 @@
   align-items: center;
   gap: 8px;
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text);
   cursor: pointer;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 .rs-ai-star   { color: var(--primary); font-size: 0.88rem; }
 .rs-rec-badge {
@@ -165,9 +166,10 @@
   border: 1px solid var(--border-2);
   border-radius: var(--radius);
   padding: 10px 18px;
-  font: 600 0.875rem 'Inter', sans-serif;
+  font: 700 0.875rem 'Plus Jakarta Sans', sans-serif;
   cursor: pointer;
   transition: background 0.15s, transform 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
 .rs-btn-ghost:hover { background: var(--bg-2); transform: translateY(-1px); }
 .rs-btn-primary {
@@ -183,7 +185,7 @@
 .rs-results-panel { display: flex; flex-direction: column; gap: 14px; }
 .rs-results-head  { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
 .rs-results-head h2 { margin: 0; }
-.rs-results-count   { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-3); }
+.rs-results-count   { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--text-3); }
 
 /* Result card */
 .rs-result-card {
@@ -205,13 +207,13 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.62rem;
+  font-size: 0.60rem;
   font-weight: 700;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
   color: var(--primary);
   background: var(--primary-dim);
-  border: 1px solid rgba(79,70,229,0.2);
+  border: 1px solid var(--border);
   padding: 2px 10px;
   border-radius: 999px;
   font-family: 'JetBrains Mono', monospace;
@@ -230,7 +232,7 @@
   padding: 2px 7px; border-radius: 5px;
   flex-shrink: 0;
 }
-.rs-filename    { font-weight: 500; font-size: 0.9rem; overflow-wrap: anywhere; color: var(--text); }
+.rs-filename    { font-weight: 700; font-size: 0.88rem; overflow-wrap: anywhere; color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; }
 
 /* Score bubble */
 .rs-score-bubble {
@@ -266,9 +268,10 @@
   text-transform: uppercase; color: var(--primary); margin-bottom: 8px;
 }
 .rs-ai-rec {
-  font-size: 0.875rem; line-height: 1.65; color: var(--text-2);
+  font-size: 0.858rem; line-height: 1.7; color: var(--text-2);
   font-style: italic; padding-left: 12px;
   border-left: 2px solid var(--primary); margin-bottom: 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
 .rs-ai-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
@@ -279,23 +282,24 @@
 .rs-col-title.good { color: var(--success); }
 .rs-col-title.warn { color: var(--danger); }
 .rs-ai-col ul { padding-left: 15px; }
-.rs-ai-col li { font-size: 0.82rem; color: var(--text-2); margin-bottom: 3px; line-height: 1.5; }
+.rs-ai-col li { font-size: 0.80rem; color: var(--text-2); margin-bottom: 3px; line-height: 1.55; font-family: 'Plus Jakarta Sans', sans-serif; }
 
 .rs-keywords { display: flex; flex-wrap: wrap; gap: 5px; }
 .rs-kw {
-  font-size: 0.7rem; font-weight: 600; font-family: 'JetBrains Mono', monospace;
+  font-size: 0.66rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
   padding: 2px 9px; border-radius: 5px;
 }
 .rs-kw-match { background: var(--success-dim); color: var(--success); border: 1px solid rgba(16,185,129,0.22); }
 .rs-kw-miss  { background: var(--danger-dim);  color: var(--danger);  border: 1px solid rgba(239,68,68,0.2); }
 
-@media (max-width: 600px) {
+@media (max-width: 860px) {
   .rs-form-panel { padding: 18px 16px; }
-  .rs-hero { padding: 22px 16px 16px; }
+  .rs-hero { padding: 18px 14px 14px; }
   .rs-actions { flex-direction: column; }
   .rs-btn-ghost, .rs-btn-primary { width: 100%; justify-content: center; }
   .rs-btn-primary { margin-left: 0; }
   .rs-ai-cols { grid-template-columns: 1fr; }
+  .rs-char-count { font-size: 0.65rem; }
 }
 </style>
 {% endblock %}

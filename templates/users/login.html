@@ -1,57 +1,637 @@
 {% extends 'base.html' %}
 {% block title %}Sign In | InterviewAI{% endblock %}
 
+{% block extra_head %}
+<style>
+/* ── Override page-shell for full-bleed auth layout ── */
+.page-shell {
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* ── Auth split layout ── */
+.nexus-auth {
+  min-height: calc(100vh - 64px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+
+/* ── Left panel — animated background ── */
+.nexus-auth-left {
+  position: relative;
+  background: var(--bg-2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 52px;
+  border-right: 1px solid var(--border);
+}
+
+/* Animated mesh gradient */
+.nexus-auth-left::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 40%, var(--primary-glow) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 60% at 75% 70%, var(--cyan-glow) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 40% at 60% 20%, var(--pink-glow) 0%, transparent 55%);
+  animation: mesh-drift 10s ease-in-out infinite alternate;
+  z-index: 0;
+}
+@keyframes mesh-drift {
+  0%   { transform: translate(0,0) rotate(0deg); }
+  33%  { transform: translate(3%,2%) rotate(1deg); }
+  66%  { transform: translate(-2%,3%) rotate(-1deg); }
+  100% { transform: translate(2%,-2%) rotate(0.5deg); }
+}
+
+/* Dot grid overlay */
+.nexus-auth-left::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+  z-index: 1;
+}
+
+.nexus-auth-left-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 380px;
+}
+
+.nexus-left-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-bottom: 52px;
+  letter-spacing: -0.03em;
+}
+.nexus-left-logo .brand-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 14px var(--primary-glow);
+  animation: pulse-dot 2.5s ease-in-out infinite;
+}
+
+/* Floating card mockup */
+.nexus-hero-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 26px;
+  backdrop-filter: blur(20px);
+  margin-bottom: 36px;
+  text-align: left;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+  animation: card-float 5s ease-in-out infinite;
+}
+@keyframes card-float {
+  0%,100% { transform: translateY(0px); }
+  50%      { transform: translateY(-8px); }
+}
+
+.hero-card-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--primary);
+  margin-bottom: 10px;
+}
+.hero-card-score {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.6rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.hero-card-score span { color: var(--primary); }
+.hero-card-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.hero-card-fill {
+  height: 100%;
+  width: 78%;
+  background: linear-gradient(90deg, var(--primary), var(--cyan));
+  border-radius: 99px;
+  box-shadow: 0 0 10px var(--primary-glow);
+  animation: fill-pulse 3s ease-in-out infinite alternate;
+}
+@keyframes fill-pulse {
+  from { width: 65%; }
+  to   { width: 82%; }
+}
+.hero-card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.hero-tag {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.6rem;
+  padding: 3px 9px;
+  border-radius: 5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.hero-tag.green { background: var(--success-dim); color: var(--success); border: 1px solid rgba(0,229,160,0.22); }
+.hero-tag.blue  { background: var(--primary-dim); color: var(--primary); border: 1px solid var(--border); }
+.hero-tag.pink  { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(255,45,120,0.22); }
+
+.nexus-left-headline {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+}
+.nexus-left-headline span { color: var(--primary); }
+.nexus-left-sub {
+  font-size: 0.88rem;
+  color: var(--text-2);
+  line-height: 1.65;
+}
+
+/* ── Stat pills row ── */
+.nexus-stat-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+  justify-content: center;
+}
+.nexus-stat-pill {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 8px 16px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+.nexus-stat-pill strong {
+  display: block;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.03em;
+}
+.nexus-stat-pill span {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-3);
+}
+
+/* ── Right panel — form ── */
+.nexus-auth-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 52px;
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+.nexus-form-wrap {
+  width: 100%;
+  max-width: 420px;
+}
+
+.nexus-form-header {
+  margin-bottom: 36px;
+}
+
+.nexus-form-eyebrow {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--primary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nexus-form-eyebrow::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--primary);
+  flex-shrink: 0;
+}
+
+.nexus-form-title {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  margin-bottom: 10px;
+}
+.nexus-form-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+/* ── Input field redesign ── */
+.nexus-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 14px;
+}
+.nexus-field-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-3);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.nexus-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.nexus-input-icon {
+  position: absolute;
+  left: 14px;
+  width: 17px; height: 17px;
+  color: var(--text-3);
+  pointer-events: none;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+.nexus-input {
+  width: 100%;
+  background: var(--bg-3) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  color: var(--text) !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 0.9rem !important;
+  padding: 13px 14px 13px 44px !important;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s !important;
+}
+.nexus-input:focus {
+  outline: none !important;
+  border-color: var(--primary) !important;
+  background: var(--bg-2) !important;
+  box-shadow: 0 0 0 3px var(--primary-dim), 0 0 20px var(--primary-dim) !important;
+}
+.nexus-input:focus + .nexus-input-icon,
+.nexus-input-wrap:focus-within .nexus-input-icon {
+  color: var(--primary);
+}
+.nexus-input::placeholder { color: var(--text-3) !important; }
+
+/* Password toggle */
+.nexus-pw-toggle {
+  position: absolute;
+  right: 13px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-3);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  transform: none;
+  transition: color 0.15s;
+}
+.nexus-pw-toggle:hover { color: var(--primary); background: none; box-shadow: none; transform: none; }
+.nexus-pw-toggle svg { width: 16px; height: 16px; }
+
+/* ── Submit button ── */
+.nexus-submit {
+  width: 100%;
+  padding: 14px 20px !important;
+  font-size: 0.95rem !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 700 !important;
+  border-radius: 12px !important;
+  margin-top: 6px;
+  letter-spacing: -0.01em;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Divider ── */
+.nexus-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 22px 0;
+  color: var(--text-3);
+  font-family: 'Fira Code', monospace;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.nexus-divider::before, .nexus-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Footer link ── */
+.nexus-footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.875rem;
+  color: var(--text-3);
+}
+.nexus-footer a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  transition: text-shadow 0.2s;
+}
+.nexus-footer a:hover { text-shadow: 0 0 12px var(--primary-glow); }
+
+/* ── Error / Banner ── */
+.nexus-error {
+  background: var(--danger-dim);
+  border: 1px solid rgba(255,45,120,0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  color: var(--danger);
+  margin-bottom: 16px;
+  display: none;
+  font-family: 'Space Grotesk', sans-serif;
+}
+.nexus-error.show { display: block; }
+.nexus-inline-error {
+  color: var(--danger);
+  font-size: 0.78rem;
+  font-family: 'Fira Code', monospace;
+  margin-bottom: 10px;
+  min-height: 1.2em;
+}
+
+/* ── Feature bullets ── */
+.nexus-features {
+  display: grid;
+  gap: 10px;
+  margin-top: 0;
+}
+.nexus-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.82rem;
+  color: var(--text-2);
+  font-family: 'Space Grotesk', sans-serif;
+}
+.nexus-feature-dot {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  background: var(--primary-dim);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+}
+
+/* ── Mobile — full single column ── */
+@media (max-width: 768px) {
+  .nexus-auth {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+  .nexus-auth-left {
+    display: none; /* hide on small screens */
+  }
+  .nexus-auth-right {
+    padding: 32px 24px 48px;
+    min-height: calc(100vh - 64px);
+  }
+  .nexus-form-wrap {
+    max-width: 100%;
+  }
+  .nexus-form-title {
+    font-size: 2rem;
+  }
+  .nexus-input {
+    font-size: 16px !important; /* prevent iOS zoom */
+    padding: 14px 14px 14px 46px !important;
+  }
+  .nexus-submit { padding: 15px 20px !important; font-size: 1rem !important; }
+
+  /* Show a small brand badge instead of left panel */
+  .nexus-mobile-brand {
+    display: flex !important;
+  }
+}
+
+.nexus-mobile-brand {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-bottom: 32px;
+  letter-spacing: -0.03em;
+}
+.nexus-mobile-brand .brand-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="auth-wrap">
-  <div class="auth-card auth-card-refresh reveal">
+<div class="nexus-auth">
 
-    <div class="auth-logo">
-      <span class="brand-dot"></span> InterviewAI
+  <!-- ── LEFT: Marketing panel ── -->
+  <div class="nexus-auth-left">
+    <div class="nexus-auth-left-content">
+      <div class="nexus-left-logo">
+        <span class="brand-dot"></span>
+        InterviewAI
+      </div>
+
+      <!-- Floating mock card -->
+      <div class="nexus-hero-card">
+        <div class="hero-card-label">/ session score</div>
+        <div class="hero-card-score">8.<span>4</span><span style="font-size:1rem;color:var(--text-3);font-weight:400;">/10</span></div>
+        <div class="hero-card-bar"><div class="hero-card-fill"></div></div>
+        <div class="hero-card-tags">
+          <span class="hero-tag green">✓ Python</span>
+          <span class="hero-tag blue">DSA</span>
+          <span class="hero-tag pink">System Design</span>
+        </div>
+      </div>
+
+      <h2 class="nexus-left-headline">
+        Ace your next<br><span>interview</span> — no cap.
+      </h2>
+      <p class="nexus-left-sub">
+        AI-powered mock sessions, real-time feedback, and streak tracking to keep you locked in.
+      </p>
+
+      <div class="nexus-stat-row">
+        <div class="nexus-stat-pill">
+          <strong>10K+</strong>
+          <span>sessions</span>
+        </div>
+        <div class="nexus-stat-pill">
+          <strong>9</strong>
+          <span>categories</span>
+        </div>
+        <div class="nexus-stat-pill">
+          <strong>AI</strong>
+          <span>powered</span>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <h1>Welcome back</h1>
-    <p class="subtitle">Sign in to pick up where you left off. Your progress is waiting.</p>
+  <!-- ── RIGHT: Login form ── -->
+  <div class="nexus-auth-right">
+    <div class="nexus-form-wrap reveal">
 
-    <div id="login-banner" class="auth-banner" style="display:none;"></div>
+      <!-- Mobile brand badge -->
+      <div class="nexus-mobile-brand">
+        <span class="brand-dot"></span>
+        InterviewAI
+      </div>
 
-    {% if messages %}
-      {% for message in messages %}
-        <p class="auth-inline-error">{{ message }}</p>
-      {% endfor %}
-    {% endif %}
+      <div class="nexus-form-header">
+        <div class="nexus-form-eyebrow">Sign in</div>
+        <h1 class="nexus-form-title">Welcome back</h1>
+        <p class="nexus-form-subtitle">Your streak is waiting. Pick up right where you left off.</p>
+      </div>
 
-    <p id="login-error" class="auth-inline-error" style="min-height:1.4em;margin-bottom:6px;"></p>
+      <!-- Error / banner -->
+      <div id="login-banner" class="nexus-error"></div>
+      {% if messages %}
+        {% for message in messages %}
+          <div class="nexus-error show">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+      <div id="login-error" class="nexus-inline-error"></div>
 
-    <form method="post" action="{% url 'login' %}" id="login-form">
-      {% csrf_token %}
-      <label>
-        Username or email
-        <input type="text"
-               name="identifier"
-               id="login-identifier"
-               required
-               autocomplete="username"
-               placeholder="yourname or you@example.com"
-               autocapitalize="off"
-               autocorrect="off"
-               spellcheck="false">
-      </label>
-      <label>
-        Password
-        <input type="password"
-               name="password"
-               id="login-password"
-               required
-               autocomplete="current-password"
-               placeholder="••••••••">
-      </label>
-      <button type="submit" id="login-btn" class="auth-submit-btn">
-        Sign in →
-      </button>
-    </form>
+      <form method="post" action="{% url 'login' %}" id="login-form">
+        {% csrf_token %}
 
-    <div class="auth-footer">
-      No account? <a href="{% url 'register' %}">Create one free →</a>
+        <!-- Username/email field -->
+        <div class="nexus-field">
+          <div class="nexus-field-label">Username or Email</div>
+          <div class="nexus-input-wrap">
+            <input
+              class="nexus-input"
+              type="text"
+              name="identifier"
+              id="login-identifier"
+              required
+              autocomplete="username"
+              placeholder="yourname or you@example.com"
+              autocapitalize="off"
+              autocorrect="off"
+              spellcheck="false">
+            <svg class="nexus-input-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 14s-1-4-6-4-6 4-6 4"/>
+              <circle cx="10" cy="7" r="3"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Password field -->
+        <div class="nexus-field">
+          <div class="nexus-field-label">Password</div>
+          <div class="nexus-input-wrap">
+            <input
+              class="nexus-input"
+              type="password"
+              name="password"
+              id="login-password"
+              required
+              autocomplete="current-password"
+              placeholder="Enter your password">
+            <svg class="nexus-input-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="9" width="14" height="10" rx="2"/>
+              <path d="M7 9V7a3 3 0 0 1 6 0v2"/>
+            </svg>
+            <button type="button" class="nexus-pw-toggle" id="pw-toggle" aria-label="Toggle password visibility">
+              <svg id="pw-eye" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/>
+                <circle cx="10" cy="10" r="2.5"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="login-btn" class="nexus-submit">
+          Sign in →
+        </button>
+      </form>
+
+      <div class="nexus-divider">or</div>
+
+      <!-- Features teaser -->
+      <div class="nexus-features">
+        <div class="nexus-feature">
+          <span class="nexus-feature-dot">🔥</span>
+          Daily streaks to keep you consistent
+        </div>
+        <div class="nexus-feature">
+          <span class="nexus-feature-dot">🎯</span>
+          AI scores every answer instantly
+        </div>
+        <div class="nexus-feature">
+          <span class="nexus-feature-dot">📈</span>
+          Track improvement over time
+        </div>
+      </div>
+
+      <div class="nexus-footer">
+        No account? <a href="{% url 'register' %}">Create one free →</a>
+      </div>
     </div>
   </div>
 </div>
@@ -60,43 +640,50 @@
 {% block extra_js %}
 <script>
 (function () {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('reason') === 'expired') {
-        const banner = document.getElementById('login-banner');
-        banner.textContent = 'Your session has expired. Please sign in again.';
-        banner.style.display = 'block';
+  // Session expired banner
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('reason') === 'expired') {
+    const banner = document.getElementById('login-banner');
+    banner.textContent = 'Your session expired — sign in again.';
+    banner.classList.add('show');
+  }
+
+  // Password toggle
+  const pwInput  = document.getElementById('login-password');
+  const pwToggle = document.getElementById('pw-toggle');
+  const pwEye    = document.getElementById('pw-eye');
+  pwToggle.addEventListener('click', function () {
+    const isHidden = pwInput.type === 'password';
+    pwInput.type = isHidden ? 'text' : 'password';
+    pwEye.innerHTML = isHidden
+      ? '<line x1="1" y1="1" x2="19" y2="19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8.5 8.5A2.5 2.5 0 0 0 12.5 12.5"/><path d="M10.5 4.1C10.3 4 10.2 4 10 4c-5.5 0-9 6-9 6s1.2 1.9 3.3 3.4"/><path d="M15 15c1.7-1.5 3-3 3-3s-3.5-6-9-6"/>'
+      : '<path d="M1 10s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="10" cy="10" r="2.5"/>';
+  });
+
+  // Form submission
+  const form      = document.getElementById('login-form');
+  const idEl      = document.getElementById('login-identifier');
+  const errorEl   = document.getElementById('login-error');
+  const btn       = document.getElementById('login-btn');
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const identifier = idEl.value.trim();
+    const password   = pwInput.value;
+
+    if (!identifier || !password) {
+      errorEl.textContent = 'Please fill in both fields.';
+      return;
     }
+    btn.disabled    = true;
+    btn.textContent = 'Signing in…';
+    errorEl.textContent = '';
 
-    const form         = document.getElementById('login-form');
-    const identifierEl = document.getElementById('login-identifier');
-    const passwordEl   = document.getElementById('login-password');
-    const errorEl      = document.getElementById('login-error');
-    const btn          = document.getElementById('login-btn');
-
-    form.addEventListener('submit', async function (e) {
-        e.preventDefault();
-        const identifier = identifierEl.value.trim();
-        const password   = passwordEl.value;
-
-        if (!identifier || !password) {
-            errorEl.textContent = 'Please enter your username/email and password.';
-            return;
-        }
-
-        btn.disabled    = true;
-        btn.textContent = 'Signing in…';
-        errorEl.textContent = '';
-
-        if (window.Auth) {
-            try {
-                await window.Auth.login(identifier, password);
-            } catch (err) {
-                console.warn('JWT login attempt failed:', err.message);
-            }
-        }
-
-        form.submit();
-    });
+    if (window.Auth) {
+      try { await window.Auth.login(identifier, password); } catch (err) {}
+    }
+    form.submit();
+  });
 })();
 </script>
 {% endblock %}
