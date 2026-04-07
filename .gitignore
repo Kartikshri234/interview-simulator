@@ -24,7 +24,6 @@ db.sqlite3-journal
 
 # Runtime-generated folders (never commit these)
 /staticfiles/
-/media/
 /resume_uploads/
 
 # ── Environment secrets ───────────────────────────────────────
