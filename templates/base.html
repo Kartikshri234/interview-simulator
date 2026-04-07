@@ -8,7 +8,6 @@
   <script>document.documentElement.classList.add('js');</script>
   <title>{% block title %}AI Interview Simulator{% endblock %}</title>
 
-  <!-- Fonts: Clash Display (display) + Plus Jakarta Sans (body) + JetBrains Mono (mono) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -20,304 +19,508 @@
 </head>
 <body>
 
-  <!-- ── Top navigation ── -->
-  <header class="topbar">
-    <a href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}" class="brand">
-      <span class="brand-dot"></span>
-      InterviewAI
+<!-- ╔══════════════════════════════════════════════════════════╗
+     ║                     TOP NAVIGATION                      ║
+     ╚══════════════════════════════════════════════════════════╝ -->
+<header class="topbar" id="topbar">
+
+  <!-- ── Brand / Logo ── -->
+  <a href="{% if request.user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'login' %}{% endif %}" class="brand" aria-label="InterviewAI home">
+    <span class="brand-icon" aria-hidden="true">
+      <svg viewBox="0 0 28 28" fill="none">
+        <rect x="2" y="2" width="24" height="24" rx="7" fill="var(--primary)" opacity=".18"/>
+        <rect x="2" y="2" width="24" height="24" rx="7" stroke="var(--primary)" stroke-width="1.5" opacity=".5"/>
+        <circle cx="10" cy="11" r="2.5" fill="var(--primary)"/>
+        <circle cx="18" cy="11" r="2.5" fill="var(--mint)" opacity=".9"/>
+        <path d="M7 18c1-2.5 3-3.5 7-3.5s6 1 7 3.5" stroke="var(--primary)" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span class="brand-name">Interview<span class="brand-accent">AI</span></span>
+  </a>
+
+  <!-- ── Desktop navigation ── -->
+  {% if request.user.is_authenticated %}
+  <nav class="nav-links" id="desktop-nav" aria-label="Main navigation">
+    <a href="{% url 'dashboard' %}"
+       class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}nav-active{% endif %}"
+       data-label="Dashboard">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="2" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.6"/><rect x="2" y="11" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.6"/></svg>
+      Dashboard
+    </a>
+    <a href="{% url 'new_interview' %}"
+       class="nav-link {% if request.resolver_match.url_name == 'new_interview' %}nav-active{% endif %}"
+       data-label="New Session">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/><line x1="10" y1="6.5" x2="10" y2="13.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="6.5" y1="10" x2="13.5" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      New Session
+    </a>
+    <a href="{% url 'history' %}"
+       class="nav-link {% if request.resolver_match.url_name == 'history' %}nav-active{% endif %}"
+       data-label="History">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><path d="M3 10a7 7 0 1 0 7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><polyline points="3 4 3 10 9 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      History
+    </a>
+    <a href="{% url 'resume_screening' %}"
+       class="nav-link {% if request.resolver_match.url_name == 'resume_screening' %}nav-active{% endif %}"
+       data-label="Resume AI">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><path d="M12 2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.6"/><polyline points="12 2 12 8 18 8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><line x1="7" y1="11" x2="13" y2="11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="7" y1="14" x2="11" y2="14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      Resume AI
+    </a>
+    <a href="{% url 'bookmarks' %}"
+       class="nav-link {% if request.resolver_match.url_name == 'bookmarks' %}nav-active{% endif %}"
+       data-label="Bookmarks">
+      <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><path d="M5 3h10a1 1 0 0 1 1 1v13l-6-3.5L4 17V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      Bookmarks
     </a>
 
-    <!-- Desktop nav -->
-    <nav class="nav-links" id="desktop-nav">
-      {% if request.user.is_authenticated %}
-        <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="nav-active"{% endif %}>Dashboard</a>
-        <a href="{% url 'new_interview' %}" {% if request.resolver_match.url_name == 'new_interview' %}class="nav-active"{% endif %}>New Session</a>
-        <a href="{% url 'history' %}" {% if request.resolver_match.url_name == 'history' %}class="nav-active"{% endif %}>History</a>
-        <a href="{% url 'resume_screening' %}" {% if request.resolver_match.url_name == 'resume_screening' %}class="nav-active"{% endif %}>Resume AI</a>
-        <a href="{% url 'bookmarks' %}" {% if request.resolver_match.url_name == 'bookmarks' %}class="nav-active"{% endif %}>Bookmarks</a>
-        <a href="{% url 'profile' %}" {% if request.resolver_match.url_name == 'profile' %}class="nav-active"{% endif %}>Profile</a>
-        <button type="button" class="btn-link danger" id="logout-link" onclick="doLogout()">Logout</button>
-      {% else %}
-        <a href="{% url 'login' %}">Sign in</a>
-        <a href="{% url 'register' %}" class="btn-link">Get started →</a>
-      {% endif %}
-      <button class="settings-btn" id="settings-open-btn" title="Settings" aria-label="Open settings">
-        <span class="settings-btn-inner">
-          <svg class="settings-btn-icon" viewBox="0 0 20 20" fill="none">
-            <line x1="4" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            <line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            <line x1="4" y1="15" x2="16" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            <circle cx="7" cy="5" r="2" fill="currentColor" stroke="none"/>
-            <circle cx="13" cy="10" r="2" fill="currentColor" stroke="none"/>
-            <circle cx="8" cy="15" r="2" fill="currentColor" stroke="none"/>
-          </svg>
-        </span>
-      </button>
-    </nav>
+    <!-- Separator -->
+    <span class="nav-sep" aria-hidden="true"></span>
 
-    <!-- Mobile: settings + hamburger -->
-    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-      <button class="settings-btn" id="settings-open-btn-mobile" title="Settings" aria-label="Open settings" style="display:none;">
-        <span class="settings-btn-inner">
-          <svg class="settings-btn-icon" viewBox="0 0 20 20" fill="none">
-            <line x1="4" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            <line x1="4" y1="10" x2="16" y2="10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            <line x1="4" y1="15" x2="16" y2="15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-            <circle cx="7" cy="5" r="2" fill="currentColor" stroke="none"/>
-            <circle cx="13" cy="10" r="2" fill="currentColor" stroke="none"/>
-            <circle cx="8" cy="15" r="2" fill="currentColor" stroke="none"/>
-          </svg>
+    <!-- New Session CTA pill -->
+    <a href="{% url 'new_interview' %}" class="nav-cta" aria-label="Start a new interview session">
+      <svg width="13" height="13" viewBox="0 0 20 20" fill="none"><polygon points="6 4 16 10 6 16 6 4" fill="currentColor"/></svg>
+      Start interview
+    </a>
+
+    <!-- User menu -->
+    <div class="user-menu-wrap" id="user-menu-wrap">
+      <button class="user-menu-trigger" id="user-menu-trigger" aria-haspopup="true" aria-expanded="false" aria-label="User menu">
+        <span class="user-avatar-mini" id="nav-avatar">
+          {% if request.user.avatar %}
+            <img src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" class="nav-avatar-img">
+          {% else %}
+            <span class="nav-avatar-initials">{{ request.user.initials|default:request.user.username|slice:":2"|upper }}</span>
+          {% endif %}
         </span>
+        <span class="user-name-label">{{ request.user.username|truncatechars:14 }}</span>
+        <svg class="user-menu-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <polyline points="3 4.5 6 7.5 9 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
       </button>
-      <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
+
+      <!-- Dropdown -->
+      <div class="user-dropdown" id="user-dropdown" role="menu" aria-label="User options">
+        <div class="ud-header">
+          <div class="ud-avatar-lg">
+            {% if request.user.avatar %}
+              <img src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" class="ud-avatar-img">
+            {% else %}
+              <span class="ud-avatar-initials">{{ request.user.initials|default:request.user.username|slice:":2"|upper }}</span>
+            {% endif %}
+          </div>
+          <div class="ud-identity">
+            <span class="ud-name">{{ request.user.username }}</span>
+            <span class="ud-email">{{ request.user.email }}</span>
+            {% if request.user.target_role %}
+              <span class="ud-role">🎯 {{ request.user.target_role }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="ud-divider"></div>
+        <a class="ud-item" href="{% url 'profile' %}" role="menuitem">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="1.5"/><path d="M3 18c0-3.3 3.1-6 7-6s7 2.7 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Your profile
+        </a>
+        <a class="ud-item" href="{% url 'history' %}" role="menuitem">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M3 10a7 7 0 1 0 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><polyline points="3 4 3 10 9 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Session history
+        </a>
+        <a class="ud-item" href="{% url 'bookmarks' %}" role="menuitem">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M5 3h10a1 1 0 0 1 1 1v13l-6-3.5L4 17V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          Bookmarks
+        </a>
+        <div class="ud-divider"></div>
+        <button class="ud-item ud-item--danger" role="menuitem" onclick="doLogout()" id="logout-link">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M8 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><polyline points="13 14 17 10 13 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="17" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Sign out
+        </button>
+      </div>
     </div>
-  </header>
 
-  <!-- Mobile drawer -->
-  <nav class="nav-mobile-drawer" id="nav-mobile-drawer" aria-label="Mobile navigation">
-    {% if request.user.is_authenticated %}
-      <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="nav-active"{% endif %}>🏠 Dashboard</a>
-      <a href="{% url 'new_interview' %}" {% if request.resolver_match.url_name == 'new_interview' %}class="nav-active"{% endif %}>➕ New Session</a>
-      <a href="{% url 'history' %}" {% if request.resolver_match.url_name == 'history' %}class="nav-active"{% endif %}>📋 History</a>
-      <a href="{% url 'resume_screening' %}" {% if request.resolver_match.url_name == 'resume_screening' %}class="nav-active"{% endif %}>📄 Resume AI</a>
-      <a href="{% url 'bookmarks' %}" {% if request.resolver_match.url_name == 'bookmarks' %}class="nav-active"{% endif %}>🔖 Bookmarks</a>
-      <a href="{% url 'profile' %}" {% if request.resolver_match.url_name == 'profile' %}class="nav-active"{% endif %}>👤 Profile</a>
-      <button type="button" class="btn-link danger" onclick="doLogout()" style="margin-top:4px;">Logout</button>
-    {% else %}
-      <a href="{% url 'login' %}">Sign in</a>
-      <a href="{% url 'register' %}" class="btn-link">Get started →</a>
-    {% endif %}
+    <!-- Settings button -->
+    <button class="topbar-icon-btn settings-btn" id="settings-open-btn" title="Settings" aria-label="Open settings">
+      <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+        <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M10 2.5v1.2M10 16.3v1.2M2.5 10h1.2M16.3 10h1.2M4.6 4.6l.85.85M14.55 14.55l.85.85M4.6 15.4l.85-.85M14.55 5.45l.85-.85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+
   </nav>
 
-  <!-- ── Settings overlay ── -->
-  <div class="settings-overlay" id="settings-overlay"></div>
+  {% else %}
+  <!-- Unauthenticated nav -->
+  <nav class="nav-links nav-links--auth" id="desktop-nav" aria-label="Site navigation">
+    <a href="{% url 'login' %}" class="nav-link">Sign in</a>
+    <a href="{% url 'register' %}" class="nav-cta">Get started →</a>
+    <button class="topbar-icon-btn settings-btn" id="settings-open-btn" title="Settings" aria-label="Open settings">
+      <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+        <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M10 2.5v1.2M10 16.3v1.2M2.5 10h1.2M16.3 10h1.2M4.6 4.6l.85.85M14.55 14.55l.85.85M4.6 15.4l.85-.85M14.55 5.45l.85-.85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </nav>
+  {% endif %}
 
-  <!-- ── Settings panel ── -->
-  <aside class="settings-panel" id="settings-panel" role="dialog" aria-label="Settings">
-    <div class="settings-header">
-      <div class="settings-header-logo">
-        <div class="settings-logo-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-          </svg>
-        </div>
-        <div>
-          <h2>Settings</h2>
-          <p class="settings-header-sub">Customize your experience</p>
-        </div>
+  <!-- ── Mobile right-side controls ── -->
+  <div class="topbar-mobile-right">
+    <button class="topbar-icon-btn settings-btn" id="settings-open-btn-mobile" title="Settings" aria-label="Open settings" style="display:none">
+      <svg viewBox="0 0 20 20" fill="none" width="16" height="16">
+        <circle cx="10" cy="10" r="2.5" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M10 2.5v1.2M10 16.3v1.2M2.5 10h1.2M16.3 10h1.2M4.6 4.6l.85.85M14.55 14.55l.85.85M4.6 15.4l.85-.85M14.55 5.45l.85-.85" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Toggle menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+</header>
+
+<!-- Active page indicator line -->
+<div class="topbar-progress-line" id="topbar-progress-line"></div>
+
+<!-- ── Mobile full-screen drawer ── -->
+<nav class="nav-mobile-drawer" id="nav-mobile-drawer" aria-label="Mobile navigation">
+  {% if request.user.is_authenticated %}
+
+  <!-- User info header -->
+  <div class="drawer-user-header">
+    <div class="drawer-avatar">
+      {% if request.user.avatar %}
+        <img src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" class="drawer-avatar-img">
+      {% else %}
+        <span class="drawer-avatar-initials">{{ request.user.initials|default:request.user.username|slice:":2"|upper }}</span>
+      {% endif %}
+    </div>
+    <div class="drawer-user-info">
+      <span class="drawer-user-name">{{ request.user.username }}</span>
+      <span class="drawer-user-email">{{ request.user.email }}</span>
+    </div>
+  </div>
+
+  <div class="drawer-divider"></div>
+
+  <a href="{% url 'dashboard' %}" class="drawer-link {% if request.resolver_match.url_name == 'dashboard' %}drawer-active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="2" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.6"/><rect x="2" y="11" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.6"/><rect x="11" y="11" width="7" height="7" rx="2" stroke="currentColor" stroke-width="1.6"/></svg>
+    Dashboard
+  </a>
+  <a href="{% url 'new_interview' %}" class="drawer-link drawer-link--cta {% if request.resolver_match.url_name == 'new_interview' %}drawer-active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.6"/><line x1="10" y1="6.5" x2="10" y2="13.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="6.5" y1="10" x2="13.5" y2="10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    New Session
+    <span class="drawer-badge">Start</span>
+  </a>
+  <a href="{% url 'history' %}" class="drawer-link {% if request.resolver_match.url_name == 'history' %}drawer-active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3 10a7 7 0 1 0 7-7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><polyline points="3 4 3 10 9 10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    History
+  </a>
+  <a href="{% url 'resume_screening' %}" class="drawer-link {% if request.resolver_match.url_name == 'resume_screening' %}drawer-active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M12 2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.6"/><polyline points="12 2 12 8 18 8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    Resume AI
+  </a>
+  <a href="{% url 'bookmarks' %}" class="drawer-link {% if request.resolver_match.url_name == 'bookmarks' %}drawer-active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 3h10a1 1 0 0 1 1 1v13l-6-3.5L4 17V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+    Bookmarks
+  </a>
+  <a href="{% url 'profile' %}" class="drawer-link {% if request.resolver_match.url_name == 'profile' %}drawer-active{% endif %}">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 10a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" stroke="currentColor" stroke-width="1.5"/><path d="M3 18c0-3.3 3.1-6 7-6s7 2.7 7 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Profile
+  </a>
+
+  <div class="drawer-divider" style="margin-top:auto"></div>
+
+  <button type="button" class="drawer-link drawer-link--logout" onclick="doLogout()">
+    <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M8 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><polyline points="13 14 17 10 13 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="17" y1="10" x2="7" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    Sign out
+  </button>
+
+  {% else %}
+  <a href="{% url 'login' %}" class="drawer-link">Sign in</a>
+  <a href="{% url 'register' %}" class="drawer-link drawer-link--cta">Get started →</a>
+  {% endif %}
+</nav>
+<!-- Drawer backdrop -->
+<div class="drawer-backdrop" id="drawer-backdrop"></div>
+
+
+<!-- ── Settings overlay + panel ── -->
+<div class="settings-overlay" id="settings-overlay"></div>
+
+<aside class="settings-panel" id="settings-panel" role="dialog" aria-label="Settings" aria-modal="true">
+  <div class="settings-header">
+    <div class="settings-header-logo">
+      <div class="settings-logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
       </div>
-      <button class="settings-close" id="settings-close-btn" aria-label="Close settings">✕</button>
+      <div>
+        <h2>Settings</h2>
+        <p class="settings-header-sub">Customize your experience</p>
+      </div>
+    </div>
+    <button class="settings-close" id="settings-close-btn" aria-label="Close settings">✕</button>
+  </div>
+
+  <div class="settings-body">
+    <div class="settings-section">
+      <div class="settings-section-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 12 21a9.003 9.003 0 0 0 8.354-5.646z"/></svg>
+        <h3>Appearance</h3>
+      </div>
+      <p class="settings-section-desc">Choose your visual theme. Saved automatically.</p>
+      <div class="theme-swatches">
+        <div class="theme-swatch"><input type="radio" name="theme" id="theme-dark" value="dark"><label for="theme-dark"><div class="swatch-preview swatch-dark"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>Void Dark</label></div>
+        <div class="theme-swatch"><input type="radio" name="theme" id="theme-light" value="light"><label for="theme-light"><div class="swatch-preview swatch-light"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>Soft Light</label></div>
+        <div class="theme-swatch"><input type="radio" name="theme" id="theme-blue" value="blue"><label for="theme-blue"><div class="swatch-preview swatch-blue"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>Cyber Blue</label></div>
+        <div class="theme-swatch"><input type="radio" name="theme" id="theme-rose" value="rose"><label for="theme-rose"><div class="swatch-preview swatch-rose"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>Hot Coral</label></div>
+      </div>
     </div>
 
-    <div class="settings-body">
-      <div class="settings-section">
-        <div class="settings-section-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.354 15.354A9 9 0 0 1 8.646 3.646 9.003 9.003 0 0 0 12 21a9.003 9.003 0 0 0 8.354-5.646z"/></svg>
-          <h3>Appearance</h3>
-        </div>
-        <p class="settings-section-desc">Choose your visual theme. Saved automatically.</p>
-        <div class="theme-swatches">
-          <div class="theme-swatch">
-            <input type="radio" name="theme" id="theme-dark" value="dark">
-            <label for="theme-dark">
-              <div class="swatch-preview swatch-dark"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>
-              Void Dark
-            </label>
-          </div>
-          <div class="theme-swatch">
-            <input type="radio" name="theme" id="theme-light" value="light">
-            <label for="theme-light">
-              <div class="swatch-preview swatch-light"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>
-              Soft Light
-            </label>
-          </div>
-          <div class="theme-swatch">
-            <input type="radio" name="theme" id="theme-blue" value="blue">
-            <label for="theme-blue">
-              <div class="swatch-preview swatch-blue"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>
-              Cyber Blue
-            </label>
-          </div>
-          <div class="theme-swatch">
-            <input type="radio" name="theme" id="theme-rose" value="rose">
-            <label for="theme-rose">
-              <div class="swatch-preview swatch-rose"><span class="sp-bg"></span><span class="sp-nav"></span><span class="sp-acc"></span></div>
-              Hot Coral
-            </label>
-          </div>
-        </div>
+    <div class="settings-section">
+      <div class="settings-section-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
+        <h3>Font Size</h3>
       </div>
-
-      <div class="settings-section">
-        <div class="settings-section-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
-          <h3>Font Size</h3>
-        </div>
-        <p class="settings-section-desc">Adjust base text size.</p>
-        <div class="font-size-row">
-          <button id="font-decrease" aria-label="Decrease font size">−</button>
-          <span class="font-size-label" id="font-size-label">15px</span>
-          <button id="font-increase" aria-label="Increase font size">+</button>
-        </div>
-      </div>
-
-      <div class="settings-section">
-        <div class="settings-section-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-          <h3>Preferences</h3>
-        </div>
-        <p class="settings-section-desc">Fine-tune layout and visual behaviour.</p>
-        <div class="toggle-row">
-          <div class="toggle-label">
-            <span>Compact mode</span>
-            <small>Tighter padding, more content visible</small>
-          </div>
-          <label class="toggle-switch"><input type="checkbox" id="pref-compact"><span class="toggle-track"></span></label>
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-label">
-            <span>Animations</span>
-            <small>Smooth reveal and transition effects</small>
-          </div>
-          <label class="toggle-switch"><input type="checkbox" id="pref-animations" checked><span class="toggle-track"></span></label>
-        </div>
+      <p class="settings-section-desc">Adjust base text size.</p>
+      <div class="font-size-row">
+        <button id="font-decrease" aria-label="Decrease font size">−</button>
+        <span class="font-size-label" id="font-size-label">15px</span>
+        <button id="font-increase" aria-label="Increase font size">+</button>
       </div>
     </div>
-  </aside>
 
-  <!-- ── Main content ── -->
-  <main class="page-shell">
-    {% if messages %}
-      <section class="flash-stack">
-        {% for message in messages %}
-          <div class="flash {{ message.tags|default:'info' }}">{{ message }}</div>
-        {% endfor %}
-      </section>
-    {% endif %}
-    {% block content %}{% endblock %}
-  </main>
+    <div class="settings-section">
+      <div class="settings-section-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <h3>Preferences</h3>
+      </div>
+      <p class="settings-section-desc">Fine-tune layout and visual behaviour.</p>
+      <div class="toggle-row">
+        <div class="toggle-label"><span>Compact mode</span><small>Tighter padding, more content visible</small></div>
+        <label class="toggle-switch"><input type="checkbox" id="pref-compact"><span class="toggle-track"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle-label"><span>Animations</span><small>Smooth reveal and transition effects</small></div>
+        <label class="toggle-switch"><input type="checkbox" id="pref-animations" checked><span class="toggle-track"></span></label>
+      </div>
+    </div>
+  </div>
+</aside>
 
-  <script src="{% static 'js/common.js' %}"></script>
 
-  <script>
-  (function () {
-    /* ── Mobile hamburger ── */
-    var hamburger = document.getElementById('nav-hamburger');
-    var drawer    = document.getElementById('nav-mobile-drawer');
-    var mobileSettings = document.getElementById('settings-open-btn-mobile');
+<!-- ── Main content ── -->
+<main class="page-shell">
+  {% if messages %}
+    <section class="flash-stack">
+      {% for message in messages %}
+        <div class="flash {{ message.tags|default:'info' }}">{{ message }}</div>
+      {% endfor %}
+    </section>
+  {% endif %}
+  {% block content %}{% endblock %}
+</main>
 
-    // Show mobile controls only on small screens
-    function checkMobile() {
-      var isMobile = window.innerWidth <= 860;
-      if (hamburger) hamburger.style.display = isMobile ? 'flex' : 'none';
-      if (mobileSettings) mobileSettings.style.display = isMobile ? 'flex' : 'none';
-    }
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
 
-    if (hamburger) {
-      hamburger.addEventListener('click', function () {
-        var open = drawer.classList.toggle('open');
-        hamburger.classList.toggle('open', open);
-        hamburger.setAttribute('aria-expanded', open);
-      });
-    }
-    // Close drawer on link click
-    if (drawer) {
-      drawer.querySelectorAll('a, button').forEach(function(el) {
-        el.addEventListener('click', function() {
-          drawer.classList.remove('open');
-          if (hamburger) { hamburger.classList.remove('open'); hamburger.setAttribute('aria-expanded', 'false'); }
-        });
-      });
-    }
+<script src="{% static 'js/common.js' %}"></script>
 
-    /* ── Settings panel ── */
-    function get(k, def) { try { return localStorage.getItem(k) ?? def; } catch { return def; } }
-    function set(k, v)   { try { localStorage.setItem(k, v); } catch {} }
+<script>
+(function () {
+  /* ════════════════════════════════════════════
+     TOPBAR SCROLL SHADOW
+  ════════════════════════════════════════════ */
+  var topbar = document.getElementById('topbar');
+  var lastY  = 0;
+  window.addEventListener('scroll', function () {
+    var y = window.scrollY;
+    topbar.classList.toggle('topbar--scrolled', y > 10);
+    topbar.classList.toggle('topbar--hidden',   y > lastY + 60 && y > 200);
+    topbar.classList.toggle('topbar--visible',  y < lastY);
+    lastY = y;
+  }, { passive: true });
 
-    var html = document.documentElement;
-    var currentTheme = get('ui-theme', 'dark');
+  /* ════════════════════════════════════════════
+     MOBILE HAMBURGER + DRAWER
+  ════════════════════════════════════════════ */
+  var hamburger = document.getElementById('nav-hamburger');
+  var drawer    = document.getElementById('nav-mobile-drawer');
+  var backdrop  = document.getElementById('drawer-backdrop');
+  var mobileSettings = document.getElementById('settings-open-btn-mobile');
 
-    function applyTheme(t) {
-      currentTheme = t;
-      html.setAttribute('data-theme', t);
-      set('ui-theme', t);
-      var r = document.getElementById('theme-' + t);
-      if (r) r.checked = true;
-      // Update meta theme-color
-      var mc = document.querySelector('meta[name="theme-color"]');
-      var colors = { dark:'#07070f', light:'#f5f3ff', blue:'#020a14', rose:'#0f0205' };
-      if (mc) mc.content = colors[t] || '#07070f';
-    }
-    applyTheme(currentTheme);
-    document.querySelectorAll('input[name="theme"]').forEach(function (r) {
-      r.addEventListener('change', function () { applyTheme(this.value); });
-    });
-
-    var FONT_MIN = 13, FONT_MAX = 19;
-    var fontSize = parseInt(get('ui-font-size', '15'), 10);
-    function applyFontSize(s) {
-      fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, s));
-      document.body.style.fontSize = fontSize + 'px';
-      set('ui-font-size', fontSize);
-      var lbl = document.getElementById('font-size-label');
-      if (lbl) lbl.textContent = fontSize + 'px';
-    }
-    applyFontSize(fontSize);
-    document.getElementById('font-decrease').addEventListener('click', function () { applyFontSize(fontSize - 1); });
-    document.getElementById('font-increase').addEventListener('click', function () { applyFontSize(fontSize + 1); });
-
-    var compactCheck = document.getElementById('pref-compact');
-    var isCompact = get('ui-compact', 'false') === 'true';
-    function applyCompact(v) { isCompact = v; document.body.classList.toggle('compact-mode', v); set('ui-compact', v); compactCheck.checked = v; }
-    applyCompact(isCompact);
-    compactCheck.addEventListener('change', function () { applyCompact(this.checked); });
-
-    var animCheck = document.getElementById('pref-animations');
-    var animOn = get('ui-animations', 'true') === 'true';
-    function applyAnimations(v) {
-      animOn = v; set('ui-animations', v); animCheck.checked = v;
-      if (!v) { document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('is-visible'); }); }
-    }
-    applyAnimations(animOn);
-    animCheck.addEventListener('change', function () { applyAnimations(this.checked); });
-
-    var panel   = document.getElementById('settings-panel');
-    var overlay = document.getElementById('settings-overlay');
-    function openPanel()  { panel.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
-    function closePanel() { panel.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; }
-
-    document.getElementById('settings-open-btn').addEventListener('click', openPanel);
-    if (mobileSettings) mobileSettings.addEventListener('click', openPanel);
-    document.getElementById('settings-close-btn').addEventListener('click', closePanel);
-    overlay.addEventListener('click', closePanel);
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });
-  })();
-  </script>
-
-  <script>
-  function doLogout() {
-    var btn = document.getElementById('logout-link');
-    if (btn) { btn.disabled = true; btn.textContent = 'Logging out…'; }
-    var refresh = null;
-    try { refresh = localStorage.getItem('jwt_refresh'); } catch(e) {}
-    try { localStorage.removeItem('jwt_access'); localStorage.removeItem('jwt_refresh'); localStorage.removeItem('jwt_user'); } catch(e) {}
-    if (refresh) {
-      fetch('/api/users/logout/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || '' },
-        body: JSON.stringify({ refresh: refresh })
-      }).finally(function() { window.location.href = '/logout/'; });
-    } else {
-      window.location.href = '/logout/';
-    }
+  function checkMobile() {
+    var isMobile = window.innerWidth <= 900;
+    if (hamburger)       hamburger.style.display       = isMobile ? 'flex' : 'none';
+    if (mobileSettings)  mobileSettings.style.display  = isMobile ? 'flex' : 'none';
+    // Hide desktop nav on mobile (CSS also handles this, double insurance)
+    var desktopNav = document.getElementById('desktop-nav');
+    if (desktopNav) desktopNav.style.display = isMobile ? 'none' : '';
   }
-  </script>
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
 
-  {% block extra_js %}{% endblock %}
+  function openDrawer() {
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+    hamburger.classList.add('open');
+    hamburger.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    backdrop.classList.remove('open');
+    hamburger.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  }
+
+  if (hamburger) hamburger.addEventListener('click', function () {
+    drawer.classList.contains('open') ? closeDrawer() : openDrawer();
+  });
+  if (backdrop)  backdrop.addEventListener('click', closeDrawer);
+
+  // Close drawer on link/button click
+  if (drawer) {
+    drawer.querySelectorAll('a, button').forEach(function (el) {
+      el.addEventListener('click', function () { closeDrawer(); });
+    });
+  }
+  // ESC key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { closeDrawer(); closePanel(); closeUserDropdown(); }
+  });
+
+  /* ════════════════════════════════════════════
+     USER DROPDOWN
+  ════════════════════════════════════════════ */
+  var userTrigger  = document.getElementById('user-menu-trigger');
+  var userDropdown = document.getElementById('user-dropdown');
+  var userWrap     = document.getElementById('user-menu-wrap');
+
+  function openUserDropdown() {
+    if (!userDropdown) return;
+    userDropdown.classList.add('open');
+    userTrigger && userTrigger.setAttribute('aria-expanded', 'true');
+  }
+  function closeUserDropdown() {
+    if (!userDropdown) return;
+    userDropdown.classList.remove('open');
+    userTrigger && userTrigger.setAttribute('aria-expanded', 'false');
+  }
+
+  if (userTrigger) {
+    userTrigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      userDropdown.classList.contains('open') ? closeUserDropdown() : openUserDropdown();
+    });
+  }
+  document.addEventListener('click', function (e) {
+    if (userWrap && !userWrap.contains(e.target)) closeUserDropdown();
+  });
+
+  /* ════════════════════════════════════════════
+     SETTINGS PANEL
+  ════════════════════════════════════════════ */
+  function get(k, def) { try { return localStorage.getItem(k) != null ? localStorage.getItem(k) : def; } catch { return def; } }
+  function set(k, v)   { try { localStorage.setItem(k, v); } catch {} }
+
+  var html = document.documentElement;
+
+  function applyTheme(t) {
+    html.setAttribute('data-theme', t);
+    set('ui-theme', t);
+    var r = document.getElementById('theme-' + t);
+    if (r) r.checked = true;
+    var mc = document.querySelector('meta[name="theme-color"]');
+    var colors = { dark:'#07070f', light:'#f5f3ff', blue:'#020a14', rose:'#0f0205' };
+    if (mc) mc.content = colors[t] || '#07070f';
+  }
+  applyTheme(get('ui-theme', 'dark'));
+  document.querySelectorAll('input[name="theme"]').forEach(function (r) {
+    r.addEventListener('change', function () { applyTheme(this.value); });
+  });
+
+  var FONT_MIN = 13, FONT_MAX = 19;
+  var fontSize = parseInt(get('ui-font-size', '15'), 10);
+  function applyFontSize(s) {
+    fontSize = Math.min(FONT_MAX, Math.max(FONT_MIN, s));
+    document.body.style.fontSize = fontSize + 'px';
+    set('ui-font-size', fontSize);
+    var lbl = document.getElementById('font-size-label');
+    if (lbl) lbl.textContent = fontSize + 'px';
+  }
+  applyFontSize(fontSize);
+  document.getElementById('font-decrease').addEventListener('click', function () { applyFontSize(fontSize - 1); });
+  document.getElementById('font-increase').addEventListener('click', function () { applyFontSize(fontSize + 1); });
+
+  var compactCheck = document.getElementById('pref-compact');
+  var isCompact = get('ui-compact', 'false') === 'true';
+  function applyCompact(v) { isCompact = v; document.body.classList.toggle('compact-mode', v); set('ui-compact', v); compactCheck.checked = v; }
+  applyCompact(isCompact);
+  compactCheck.addEventListener('change', function () { applyCompact(this.checked); });
+
+  var animCheck = document.getElementById('pref-animations');
+  var animOn = get('ui-animations', 'true') === 'true';
+  function applyAnimations(v) {
+    animOn = v; set('ui-animations', v); animCheck.checked = v;
+    if (!v) document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('is-visible'); });
+  }
+  applyAnimations(animOn);
+  animCheck.addEventListener('change', function () { applyAnimations(this.checked); });
+
+  var panel   = document.getElementById('settings-panel');
+  var overlay = document.getElementById('settings-overlay');
+
+  function openPanel()  { panel.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function closePanel() { panel.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; }
+
+  var sBtn  = document.getElementById('settings-open-btn');
+  var sBtnM = document.getElementById('settings-open-btn-mobile');
+  var sClose= document.getElementById('settings-close-btn');
+  if (sBtn)   sBtn.addEventListener('click',   openPanel);
+  if (sBtnM)  sBtnM.addEventListener('click',  openPanel);
+  if (sClose) sClose.addEventListener('click', closePanel);
+  if (overlay) overlay.addEventListener('click', closePanel);
+
+  /* ════════════════════════════════════════════
+     SCROLL PROGRESS LINE
+  ════════════════════════════════════════════ */
+  var progressLine = document.getElementById('topbar-progress-line');
+  if (progressLine) {
+    window.addEventListener('scroll', function () {
+      var max  = document.documentElement.scrollHeight - window.innerHeight;
+      var pct  = max > 0 ? (window.scrollY / max) * 100 : 0;
+      progressLine.style.width = pct + '%';
+    }, { passive: true });
+  }
+
+})();
+</script>
+
+<script>
+function doLogout() {
+  var btn = document.getElementById('logout-link');
+  if (btn) { btn.disabled = true; }
+  var refresh = null;
+  try { refresh = localStorage.getItem('jwt_refresh'); } catch(e) {}
+  try {
+    localStorage.removeItem('jwt_access');
+    localStorage.removeItem('jwt_refresh');
+    localStorage.removeItem('jwt_user');
+  } catch(e) {}
+  if (refresh) {
+    fetch('/api/users/logout/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/) || [])[1] || ''
+      },
+      body: JSON.stringify({ refresh: refresh })
+    }).finally(function() { window.location.href = '/logout/'; });
+  } else {
+    window.location.href = '/logout/';
+  }
+}
+</script>
+
+{% block extra_js %}{% endblock %}
 </body>
 </html>
