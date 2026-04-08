@@ -43,6 +43,18 @@
           AI Résumé
         </a>
       </div>
+      <div class="hero-microstats" aria-label="Quick summary">
+        <span class="hero-microstat">
+          <strong>{{ stats.completed|default:0 }}</strong>/{{ stats.total|default:0 }} done
+        </span>
+        <span class="hero-microstat">
+          Avg <strong>{{ stats.avg_score|default:0|floatformat:1 }}</strong>/10
+        </span>
+        <span class="hero-microstat">
+          Focus:
+          <strong>{% if recommendation %}{{ recommendation.category|title }}{% else %}Any category{% endif %}</strong>
+        </span>
+      </div>
     </div>
 
     <!-- Session Momentum Panel -->
@@ -291,7 +303,12 @@
   ══════════════════════════════════════════ -->
   <section class="card dash-recent reveal">
     <div class="recent-top-bar">
-      <h3 style="margin:0">Recent sessions</h3>
+      <div class="recent-headline">
+        <h3 style="margin:0">Recent sessions</h3>
+        {% if recent %}
+        <span class="recent-count-pill">{{ recent|length }} latest</span>
+        {% endif %}
+      </div>
       {% if recent %}
       <div class="recent-controls">
         <!-- Live search -->
@@ -394,6 +411,16 @@
 .hero-actions { display:flex;gap:9px;flex-wrap:wrap; }
 .hero-cta-primary { padding:11px 22px;font-size:.875rem; }
 .hero-cta-alt { padding:10px 17px;font-size:.83rem; }
+.hero-microstats { display:flex;flex-wrap:wrap;gap:7px;margin-top:13px; }
+.hero-microstat {
+  display:inline-flex;align-items:center;gap:4px;
+  padding:4px 10px;border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--bg-3);
+  font-size:.64rem;font-family:'JetBrains Mono',monospace;
+  color:var(--text-2);letter-spacing:.03em;
+}
+.hero-microstat strong { color:var(--text);font-weight:800; }
 
 /* Momentum panel */
 .momentum-panel { background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;display:flex;gap:18px;align-items:center; }
@@ -479,6 +506,16 @@
 
 /* ── Recent sessions ── */
 .recent-top-bar { display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:16px;padding:0 0 14px;border-bottom:1px solid var(--border); }
+.recent-headline { display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+.recent-count-pill {
+  display:inline-flex;align-items:center;
+  padding:3px 9px;border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--bg-3);
+  color:var(--text-3);
+  font:700 .60rem 'JetBrains Mono',monospace;
+  letter-spacing:.08em;text-transform:uppercase;
+}
 .recent-controls { display:flex;align-items:center;gap:9px;flex-wrap:wrap; }
 .recent-search-wrap { position:relative;display:flex;align-items:center;min-width:160px; }
 .rs-icon { position:absolute;left:10px;width:13px;height:13px;stroke:var(--text-3);pointer-events:none; }
