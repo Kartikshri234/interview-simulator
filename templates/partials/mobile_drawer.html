@@ -1,0 +1,43 @@
+{% with page=request.resolver_match.url_name %}
+<nav class="nav-mobile-drawer" id="nav-mobile-drawer" aria-label="Mobile navigation">
+  {% if request.user.is_authenticated %}
+
+  <div class="drawer-user-header">
+    <div class="drawer-avatar">
+      {% if request.user.avatar %}
+        <img src="{{ request.user.avatar.url }}" alt="{{ request.user.username }}" class="drawer-avatar-img">
+      {% else %}
+        <span class="drawer-avatar-initials">{{ request.user.initials|default:request.user.username|slice:":2"|upper }}</span>
+      {% endif %}
+    </div>
+    <div class="drawer-user-info">
+      <span class="drawer-user-name">{{ request.user.username }}</span>
+      <span class="drawer-user-email">{{ request.user.email }}</span>
+      {% if request.user.target_role %}
+      <span class="drawer-user-role">Target: {{ request.user.target_role }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="drawer-divider"></div>
+
+  <a href="{% url 'dashboard' %}" class="drawer-link {% if page == 'dashboard' %}drawer-active{% endif %}">Dashboard</a>
+  <a href="{% url 'new_interview' %}" class="drawer-link drawer-link--cta {% if page == 'new_interview' %}drawer-active{% endif %}">
+    New Session
+    <span class="drawer-badge">Start</span>
+  </a>
+  <a href="{% url 'history' %}" class="drawer-link {% if page == 'history' %}drawer-active{% endif %}">History</a>
+  <a href="{% url 'resume_screening' %}" class="drawer-link {% if page == 'resume_screening' %}drawer-active{% endif %}">Resume AI</a>
+  <a href="{% url 'bookmarks' %}" class="drawer-link {% if page == 'bookmarks' %}drawer-active{% endif %}">Bookmarks</a>
+  <a href="{% url 'profile' %}" class="drawer-link {% if page == 'profile' %}drawer-active{% endif %}">Profile</a>
+
+  <div class="drawer-divider drawer-divider--spacer"></div>
+
+  <button type="button" class="drawer-link drawer-link--logout" onclick="doLogout()">Sign out</button>
+
+  {% else %}
+  <a href="{% url 'login' %}" class="drawer-link">Sign in</a>
+  <a href="{% url 'register' %}" class="drawer-link drawer-link--cta">Get started</a>
+  {% endif %}
+</nav>
+{% endwith %}
