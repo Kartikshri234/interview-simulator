@@ -1048,12 +1048,58 @@ html.js .reveal.is-visible {
 .compact-field { max-width: 240px; }
 .field-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-3); font-family: 'JetBrains Mono', monospace; margin-bottom: 9px; }
 .form-status { margin-top: 7px; color: var(--text-2); font-family: 'JetBrains Mono', monospace; font-size: 0.74rem; }
+.ni-optional { color: var(--text-3); font-size: 0.75rem; }
+
+.mock-banner {
+  display: none;
+  border-color: var(--warning);
+  background: var(--warning-dim);
+  margin-bottom: 0;
+}
+.mock-banner-row { display: flex; align-items: center; gap: 12px; }
+.mock-banner-icon { font-size: 28px; line-height: 1; }
+.mock-banner-title { margin: 0 0 4px; }
+.mock-banner-text { margin: 0; color: var(--text-2); }
+.mock-cat-note { margin-top: 6px; }
+
+.ni-helper-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 10px 0 2px;
+}
+.ni-helper-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-2);
+  font: 600 0.64rem 'JetBrains Mono', monospace;
+  letter-spacing: 0.03em;
+}
 
 /* ─────────────────────────────────────────────
    HISTORY
 ───────────────────────────────────────────── */
 .history-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 11px; }
 .history-head h3 { margin: 0; }
+.history-head-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.history-count-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-3);
+  font: 700 0.60rem 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.history-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.history-empty-icon { font-size: 2.2rem; line-height: 1; margin-bottom: 2px; }
 
 /* ─────────────────────────────────────────────
    RESULTS
@@ -1277,12 +1323,34 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; 
 .adaptive-apply-btn:disabled { opacity: 0.6; cursor: default; }
 
 .bm-toolbar { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; margin-bottom: 14px; padding-bottom: 13px; border-bottom: 1px solid var(--border); }
+.bm-search-wrap { max-width: 340px; }
+.bm-count-pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-3);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 .bm-cat-chip  { font-family: 'JetBrains Mono', monospace; font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.10em; padding: 3px 8px; border-radius: 5px; background: var(--primary-dim); color: var(--primary); border: 1px solid var(--border); }
 .bm-diff-chip { font-family: 'JetBrains Mono', monospace; font-size: 0.60rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; }
 .bm-diff-easy   { background: var(--success-dim); color: var(--success); }
 .bm-diff-medium { background: var(--warning-dim); color: var(--warning); }
 .bm-diff-hard   { background: var(--danger-dim);  color: var(--danger);  }
+.bm-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.bm-card-main { flex: 1; min-width: 0; }
+.bm-card-tags { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.bm-question { margin: 0; }
+.bm-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.bm-mini-btn { font-size: 12px; padding: 6px 14px; }
+.bm-note { margin-top: 8px; color: var(--text-2); }
+.bm-meta-line { font-size: 11px; margin-top: 8px; }
+.bm-origin-link { color: var(--primary); }
 .bookmarks-empty { text-align: center; padding: 38px 18px; }
+.bm-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.bm-empty-icon { font-size: 2.2rem; line-height: 1; margin-bottom: 2px; }
 
 /* Compact */
 body.compact-mode .card    { border-radius: 12px; }

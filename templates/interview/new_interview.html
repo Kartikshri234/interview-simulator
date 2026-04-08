@@ -13,12 +13,12 @@
 </section>
 
 <!-- Feature 13: Mock interview banner (shown when ?mode=mock) -->
-<div id="mock-banner" class="card section-pad reveal" style="display:none;border-color:var(--warning);background:var(--warning-dim);margin-bottom:0;">
-  <div style="display:flex;align-items:center;gap:12px;">
-    <span style="font-size:28px;">🎤</span>
+<div id="mock-banner" class="card section-pad reveal mock-banner">
+  <div class="mock-banner-row">
+    <span class="mock-banner-icon">🎤</span>
     <div>
-      <h3 style="margin:0 0 4px;">Mock interview mode</h3>
-      <p style="margin:0;color:var(--text-2);">
+      <h3 class="mock-banner-title">Mock interview mode</h3>
+      <p class="mock-banner-text">
         10 questions will be drawn from mixed categories to simulate a real 45-minute interview.
         You'll receive a hiring-decision style report when done.
       </p>
@@ -35,7 +35,7 @@
 
     <div class="grid two">
       <label>
-        Session title <span style="color:var(--text-3);font-size:0.75rem;">(optional)</span>
+        Session title <span class="ni-optional">(optional)</span>
         <input type="text" name="title" id="session-title" placeholder="e.g. Python backend mock">
       </label>
       <label>
@@ -52,6 +52,12 @@
       Number of questions
       <input type="number" name="total_questions" id="total-questions" min="1" max="20" value="5" required>
     </label>
+
+    <div class="ni-helper-strip" aria-label="Quick guidance">
+      <span class="ni-helper-pill">5 questions ≈ 12 min</span>
+      <span class="ni-helper-pill">10 questions ≈ 25 min</span>
+      <span class="ni-helper-pill">Use medium for balanced practice</span>
+    </div>
 
     <div id="cat-section">
       <div class="field-label">Category</div>
@@ -133,7 +139,7 @@
     catSection.style.pointerEvents = 'none';
     const note = document.createElement('p');
     note.className = 'muted';
-    note.style.marginTop = '6px';
+    note.classList.add('mock-cat-note');
     note.textContent = 'Category is automatically mixed in mock mode.';
     catSection.appendChild(note);
     // Set title hint

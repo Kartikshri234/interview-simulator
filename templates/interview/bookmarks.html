@@ -19,12 +19,12 @@
 
     <!-- Feature 6: Bookmark search + stats -->
     <div class="bm-toolbar">
-      <div class="history-search-input-wrap" style="max-width:340px;">
+      <div class="history-search-input-wrap bm-search-wrap">
         <svg viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6"/><path d="M13 13l3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         <input type="text" id="bm-search" placeholder="Search bookmarks…" autocomplete="off">
         <button class="history-search-clear" id="bm-search-clear" hidden>✕</button>
       </div>
-      <span class="history-result-count" id="bm-count">{{ bookmarks|length }} saved</span>
+      <span class="history-result-count bm-count-pill" id="bm-count">{{ bookmarks|length }} saved</span>
     </div>
 
     <div class="answers-list" id="bm-list">
@@ -33,21 +33,21 @@
                  data-text="{{ bm.question_text|lower }}"
                  data-category="{{ bm.session.category }}">
 
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
-            <div style="flex:1;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <div class="bm-card-head">
+            <div class="bm-card-main">
+              <div class="bm-card-tags">
                 <span class="bm-cat-chip">{{ bm.session.category|title }}</span>
                 <span class="bm-diff-chip bm-diff-{{ bm.session.difficulty }}">{{ bm.session.difficulty }}</span>
               </div>
-              <h4 style="margin:0;">{{ bm.question_text }}</h4>
+              <h4 class="bm-question">{{ bm.question_text }}</h4>
             </div>
-            <div style="display:flex;gap:8px;flex-shrink:0;">
+            <div class="bm-actions">
               <!-- Feature 6: Retry = new session pre-seeded with this category -->
-              <a class="button" style="font-size:12px;padding:6px 14px;"
+              <a class="button bm-mini-btn"
                  href="{% url 'new_interview' %}?category={{ bm.session.category }}&difficulty={{ bm.session.difficulty }}">
                 Retry →
               </a>
-              <button class="button alt remove-bookmark-btn" style="font-size:12px;padding:6px 14px;"
+              <button class="button alt remove-bookmark-btn bm-mini-btn"
                       data-id="{{ bm.pk }}" data-target="bm-{{ bm.pk }}">
                 Remove
               </button>
@@ -55,11 +55,11 @@
           </div>
 
           {% if bm.note %}
-            <p style="margin-top:8px;color:var(--text-2);">📝 {{ bm.note }}</p>
+            <p class="bm-note">📝 {{ bm.note }}</p>
           {% endif %}
-          <p class="muted" style="font-size:11px;margin-top:8px;">
+          <p class="muted bm-meta-line">
             Saved {{ bm.created_at|date:'M d, Y' }} ·
-            <a href="{% url 'results' bm.session.id %}" style="color:var(--primary);">View original session</a>
+            <a class="bm-origin-link" href="{% url 'results' bm.session.id %}">View original session</a>
           </p>
         </article>
       {% endfor %}
@@ -67,7 +67,8 @@
     <p class="recent-filter-empty" id="bm-empty-search" hidden>No bookmarks match your search.</p>
 
   {% else %}
-    <div class="empty">
+    <div class="empty bm-empty">
+      <div class="bm-empty-icon">🔖</div>
       <p>You haven't bookmarked any questions yet.</p>
       <p class="muted">After completing a session, use the bookmark icon on any answer to save it here.</p>
       <a class="button" href="{% url 'new_interview' %}">Start an interview →</a>

@@ -13,7 +13,10 @@
 <section class="card section-pad reveal" data-page="history">
   {% if sessions %}
     <div class="history-head">
-      <h3>All sessions</h3>
+      <div class="history-head-title">
+        <h3>All sessions</h3>
+        <span class="history-count-pill">{{ sessions|length }} total</span>
+      </div>
       <div class="filter-row" role="group" aria-label="Filter history">
         <button type="button" class="chip-filter is-active" data-filter="all">All</button>
         <button type="button" class="chip-filter" data-filter="completed">Completed</button>
@@ -96,7 +99,8 @@
     </div>
     <p class="recent-filter-empty" id="history-filter-empty" hidden>No sessions match this filter.</p>
   {% else %}
-    <div class="empty">
+    <div class="empty history-empty">
+      <div class="history-empty-icon">🗂️</div>
       <p>You haven't completed any sessions yet.</p>
       <a class="button" href="{% url 'new_interview' %}">Start your first interview →</a>
     </div>
