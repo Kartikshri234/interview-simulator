@@ -66,12 +66,15 @@
         const fill    = document.getElementById('mp-bar-fill');
         const ring    = document.getElementById('momentum-ring-fill');
         const pctEl   = document.getElementById('momentum-pct');
+        const panel   = root.querySelector('.momentum-panel');
         if (!fill) return;
 
         const total     = parseInt(fill.dataset.total     || '0', 10);
         const completed = parseInt(fill.dataset.completed || '0', 10);
         const ratio     = total > 0 ? clamp(completed / total, 0, 1) : 0;
         const pct       = Math.round(ratio * 100);
+
+        if (panel) panel.classList.toggle('is-empty', total === 0);
 
         // Bar
         if (!reduceMotion) {

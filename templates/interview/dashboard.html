@@ -26,9 +26,15 @@
         Ready to level up,<br>
         <span class="hero-name">{{ request.user.username }}</span>?
       </h1>
+      {% if stats.total %}
       <p class="dash-hero-desc">
         Your AI-powered interview cockpit. Track every session, spot weak spots, and practice until you're hired.
       </p>
+      {% else %}
+      <p class="dash-hero-desc">
+        Start your first interview and we will build your progress dashboard automatically with score trends, weak-topic hints, and readiness signals.
+      </p>
+      {% endif %}
       <div class="hero-actions">
         <a class="button hero-cta-primary" href="{% url 'new_interview' %}">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
@@ -44,6 +50,7 @@
         </a>
       </div>
       <div class="hero-microstats" aria-label="Quick summary">
+        {% if stats.total %}
         <span class="hero-microstat">
           <strong>{{ stats.completed|default:0 }}</strong>/{{ stats.total|default:0 }} done
         </span>
@@ -54,6 +61,11 @@
           Focus:
           <strong>{% if recommendation %}{{ recommendation.category|title }}{% else %}Any category{% endif %}</strong>
         </span>
+        {% else %}
+        <span class="hero-microstat hero-microstat--hint">Pick category + difficulty</span>
+        <span class="hero-microstat hero-microstat--hint">Answer 5 questions</span>
+        <span class="hero-microstat hero-microstat--hint">Get instant AI feedback</span>
+        {% endif %}
       </div>
     </div>
 
@@ -75,7 +87,11 @@
       <div class="momentum-details">
         <p class="mp-title">Session momentum</p>
         <p class="mp-sub" id="momentum-sub">
+          {% if stats.total %}
           {{ stats.completed|default:0 }} of {{ stats.total|default:0 }} sessions completed
+          {% else %}
+          No sessions yet. Start one interview to unlock momentum tracking.
+          {% endif %}
         </p>
         <div class="mp-bar-row">
           <div class="mp-bar-track">
@@ -84,6 +100,9 @@
               data-completed="{{ stats.completed|default:0 }}"></span>
           </div>
         </div>
+        {% if not stats.total %}
+        <span class="momentum-empty-tag">First-session setup pending</span>
+        {% endif %}
         {% if recommendation %}
         <a class="mp-action" href="{% url 'new_interview' %}?category={{ recommendation.category }}">
           Practice {{ recommendation.category|title }} →
@@ -421,6 +440,7 @@
   color:var(--text-2);letter-spacing:.03em;
 }
 .hero-microstat strong { color:var(--text);font-weight:800; }
+.hero-microstat--hint { background:var(--primary-dim); color:var(--primary); border-color:var(--border-2); font-weight:700; }
 
 /* Momentum panel */
 .momentum-panel { background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;display:flex;gap:18px;align-items:center; }
@@ -438,8 +458,22 @@
 .mp-bar-row { display:flex;align-items:center;gap:9px; }
 .mp-bar-track { flex:1;height:5px;border-radius:999px;background:var(--border);overflow:hidden; }
 .mp-bar-fill { display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--mint));border-radius:999px;transition:width 1.2s cubic-bezier(.23,1,.32,1);box-shadow:0 0 8px var(--primary-glow); }
+.momentum-empty-tag {
+  display:inline-flex;
+  align-items:center;
+  align-self:flex-start;
+  padding:3px 9px;
+  border-radius:999px;
+  border:1px solid var(--border);
+  background:var(--bg-4);
+  color:var(--text-3);
+  font:700 .58rem 'JetBrains Mono',monospace;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
 .mp-action { display:inline-flex;align-items:center;font-size:.71rem;font-weight:700;color:var(--primary);text-decoration:none;border:1px solid var(--border);border-radius:7px;padding:4px 10px;background:var(--primary-dim);transition:background .15s,transform .15s;align-self:flex-start;font-family:'Plus Jakarta Sans',sans-serif; }
 .mp-action:hover { background:rgba(139,111,255,.17);transform:translateX(2px); }
+.momentum-panel.is-empty .mr-fill { opacity:.55; }
 
 /* ── KPI Grid ── */
 .kpi-grid { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px; }
