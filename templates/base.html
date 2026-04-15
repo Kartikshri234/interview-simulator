@@ -19,6 +19,8 @@
 </head>
 <body>
 
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 {% include 'partials/header.html' %}
 
 <!-- Active page indicator line -->
@@ -97,7 +99,7 @@
 
 
 <!-- ── Main content ── -->
-<main class="page-shell">
+<main class="page-shell" id="main-content" tabindex="-1">
   {% if messages %}
     <section class="flash-stack">
       {% for message in messages %}
@@ -107,6 +109,67 @@
   {% endif %}
   {% block content %}{% endblock %}
 </main>
+
+<button id="back-to-top" class="back-to-top" aria-label="Back to top" title="Back to top">
+  <svg viewBox="0 0 20 20" fill="none" width="16" height="16" aria-hidden="true">
+    <path d="M10 15V5M10 5L6.5 8.5M10 5l3.5 3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
+
+<div class="quick-actions-overlay" id="quick-actions-overlay" aria-hidden="true"></div>
+<section class="quick-actions" id="quick-actions" role="dialog" aria-modal="true" aria-label="Quick actions">
+  <div class="quick-actions-head">
+    <div>
+      <p class="qa-kicker">Quick actions</p>
+      <h2>Jump anywhere</h2>
+    </div>
+    <button type="button" class="qa-close" id="quick-actions-close" aria-label="Close quick actions">✕</button>
+  </div>
+  <label class="qa-search-wrap" for="quick-actions-search">
+    <svg viewBox="0 0 20 20" fill="none" width="15" height="15" aria-hidden="true">
+      <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.7"/>
+      <path d="M13 13l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+    </svg>
+    <input id="quick-actions-search" type="text" placeholder="Search pages, shortcuts, actions" autocomplete="off">
+    <kbd>Ctrl</kbd><span>+</span><kbd>K</kbd>
+  </label>
+  <div class="qa-list" id="quick-actions-list" role="listbox" aria-label="Quick action list">
+    {% if request.user.is_authenticated %}
+      <a href="{% url 'dashboard' %}" class="qa-item" data-qa="dashboard overview home">
+        <strong>Dashboard</strong><small>Track performance and momentum</small>
+      </a>
+      <a href="{% url 'new_interview' %}" class="qa-item" data-qa="new interview session create start">
+        <strong>New Interview</strong><small>Create a custom practice session</small>
+      </a>
+      <a href="{% url 'history' %}" class="qa-item" data-qa="history sessions attempts recent">
+        <strong>History</strong><small>Review past and active sessions</small>
+      </a>
+      <a href="{% url 'resume_screening' %}" class="qa-item" data-qa="resume screening ai rank jd">
+        <strong>Resume Screening</strong><small>Analyze resumes against job descriptions</small>
+      </a>
+      <a href="{% url 'bookmarks' %}" class="qa-item" data-qa="bookmarks saved questions">
+        <strong>Bookmarks</strong><small>Open your saved questions list</small>
+      </a>
+      <a href="{% url 'profile' %}" class="qa-item" data-qa="profile settings account">
+        <strong>Profile & Settings</strong><small>Update account and preferences</small>
+      </a>
+      <button type="button" class="qa-item qa-item-btn" id="quick-actions-open-settings" data-qa="settings theme font animations">
+        <strong>Open Settings Panel</strong><small>Theme, compact mode, and animations</small>
+      </button>
+    {% else %}
+      <a href="{% url 'login' %}" class="qa-item" data-qa="sign in login">
+        <strong>Sign In</strong><small>Access your account</small>
+      </a>
+      <a href="{% url 'register' %}" class="qa-item" data-qa="register create account signup">
+        <strong>Create Account</strong><small>Start your interview practice journey</small>
+      </a>
+      <button type="button" class="qa-item qa-item-btn" id="quick-actions-open-settings" data-qa="settings theme font animations">
+        <strong>Open Settings Panel</strong><small>Customize colors, typography, and spacing</small>
+      </button>
+    {% endif %}
+  </div>
+  <p class="qa-tip">Use ↑ ↓ to navigate, Enter to open, and Esc to close.</p>
+</section>
 
 
 <script src="{% static 'js/common.js' %}"></script>
@@ -133,11 +196,13 @@
   var drawer    = document.getElementById('nav-mobile-drawer');
   var backdrop  = document.getElementById('drawer-backdrop');
   var mobileSettings = document.getElementById('settings-open-btn-mobile');
+  var mobileQuick = document.getElementById('quick-actions-open-btn-mobile');
 
   function checkMobile() {
     var isMobile = window.innerWidth <= 900;
     if (hamburger)       hamburger.style.display       = isMobile ? 'flex' : 'none';
     if (mobileSettings)  mobileSettings.style.display  = isMobile ? 'flex' : 'none';
+    if (mobileQuick)     mobileQuick.style.display     = isMobile ? 'flex' : 'none';
     // Hide desktop nav on mobile (CSS also handles this, double insurance)
     var desktopNav = document.getElementById('desktop-nav');
     if (desktopNav) desktopNav.style.display = isMobile ? 'none' : '';
@@ -268,17 +333,150 @@
   if (sClose) sClose.addEventListener('click', closePanel);
   if (overlay) overlay.addEventListener('click', closePanel);
 
+  var quickOpenDesktop = document.getElementById('quick-actions-open-btn');
+  var quickOpenMobile = document.getElementById('quick-actions-open-btn-mobile');
+  var quickWrap = document.getElementById('quick-actions');
+  var quickOverlay = document.getElementById('quick-actions-overlay');
+  var quickClose = document.getElementById('quick-actions-close');
+  var quickSearch = document.getElementById('quick-actions-search');
+  var quickList = document.getElementById('quick-actions-list');
+  var quickSettings = document.getElementById('quick-actions-open-settings');
+  var quickFocusIndex = -1;
+
+  function getQuickItems() {
+    if (!quickList) return [];
+    return Array.from(quickList.querySelectorAll('.qa-item')).filter(function (el) {
+      return !el.hasAttribute('hidden');
+    });
+  }
+
+  function setQuickActiveByIndex(idx) {
+    var items = getQuickItems();
+    if (!items.length) return;
+    quickFocusIndex = Math.max(0, Math.min(idx, items.length - 1));
+    items.forEach(function (el, i) {
+      if (i === quickFocusIndex) {
+        el.classList.add('is-active');
+        el.scrollIntoView({ block: 'nearest' });
+      } else {
+        el.classList.remove('is-active');
+      }
+    });
+  }
+
+  function openQuickActions() {
+    if (!quickWrap || !quickOverlay) return;
+    quickWrap.classList.add('open');
+    quickOverlay.classList.add('open');
+    quickOverlay.setAttribute('aria-hidden', 'false');
+    quickFocusIndex = -1;
+    if (quickSearch) {
+      quickSearch.value = '';
+      quickSearch.dispatchEvent(new Event('input'));
+      setTimeout(function () { quickSearch.focus(); }, 40);
+    }
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeQuickActions() {
+    if (!quickWrap || !quickOverlay) return;
+    quickWrap.classList.remove('open');
+    quickOverlay.classList.remove('open');
+    quickOverlay.setAttribute('aria-hidden', 'true');
+    quickFocusIndex = -1;
+    document.body.style.overflow = '';
+  }
+
+  function isQuickActionsOpen() {
+    return quickWrap && quickWrap.classList.contains('open');
+  }
+
+  if (quickOpenDesktop) quickOpenDesktop.addEventListener('click', openQuickActions);
+  if (quickOpenMobile) quickOpenMobile.addEventListener('click', openQuickActions);
+  if (quickClose) quickClose.addEventListener('click', closeQuickActions);
+  if (quickOverlay) quickOverlay.addEventListener('click', closeQuickActions);
+
+  if (quickSettings) {
+    quickSettings.addEventListener('click', function () {
+      closeQuickActions();
+      openPanel();
+    });
+  }
+
+  if (quickList) {
+    quickList.addEventListener('mousemove', function (e) {
+      var item = e.target.closest('.qa-item');
+      if (!item) return;
+      var items = getQuickItems();
+      var idx = items.indexOf(item);
+      if (idx >= 0) setQuickActiveByIndex(idx);
+    });
+  }
+
+  if (quickSearch) {
+    quickSearch.addEventListener('input', function () {
+      var q = (quickSearch.value || '').trim().toLowerCase();
+      var allItems = quickList ? Array.from(quickList.querySelectorAll('.qa-item')) : [];
+      allItems.forEach(function (el) {
+        var hay = ((el.getAttribute('data-qa') || '') + ' ' + (el.textContent || '')).toLowerCase();
+        el.hidden = q ? hay.indexOf(q) === -1 : false;
+        el.classList.remove('is-active');
+      });
+      var visible = getQuickItems();
+      if (visible.length) setQuickActiveByIndex(0);
+    });
+
+    quickSearch.addEventListener('keydown', function (e) {
+      if (!isQuickActionsOpen()) return;
+      var items = getQuickItems();
+      if (!items.length) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setQuickActiveByIndex(quickFocusIndex + 1);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setQuickActiveByIndex(quickFocusIndex - 1);
+      } else if (e.key === 'Enter' && quickFocusIndex >= 0) {
+        e.preventDefault();
+        items[quickFocusIndex].click();
+      }
+    });
+  }
+
   /* ════════════════════════════════════════════
      SCROLL PROGRESS LINE
   ════════════════════════════════════════════ */
   var progressLine = document.getElementById('topbar-progress-line');
+  var backToTop = document.getElementById('back-to-top');
   if (progressLine) {
     window.addEventListener('scroll', function () {
       var max  = document.documentElement.scrollHeight - window.innerHeight;
       var pct  = max > 0 ? (window.scrollY / max) * 100 : 0;
       progressLine.style.width = pct + '%';
+      if (backToTop) {
+        backToTop.classList.toggle('show', window.scrollY > 380);
+      }
     }, { passive: true });
   }
+
+  if (backToTop) {
+    backToTop.addEventListener('click', function () {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var isCommandK = (e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 'k';
+    if (isCommandK) {
+      e.preventDefault();
+      if (isQuickActionsOpen()) closeQuickActions();
+      else openQuickActions();
+      return;
+    }
+    if (e.key === 'Escape' && isQuickActionsOpen()) {
+      closeQuickActions();
+    }
+  });
 
 })();
 </script>
